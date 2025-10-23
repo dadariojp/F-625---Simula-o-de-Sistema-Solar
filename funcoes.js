@@ -37,7 +37,24 @@ export class Ball{
         this.mass = m
         this.cor = "yellow";
         BALLZ.push(this);
+        this.trail = [];
+    }
+    desenharRastro() {  
+        this.trail.push({x: this.pos.x, y: this.pos.y}); 
+        if (this.trail.length > 500) this.trail.shift(); 
 
+        if (this.trail.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(this.trail[0].x, this.trail[0].y);
+            for (let i = 1; i < this.trail.length; i++) {
+                ctx.lineTo(this.trail[i].x, this.trail[i].y);
+            }
+            ctx.setLineDash([5,5]);
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
     }
     desenharBola(){
     ctx.beginPath();
