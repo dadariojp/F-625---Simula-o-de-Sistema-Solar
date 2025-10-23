@@ -50,53 +50,33 @@ export class Ball{
     
 };
 
-export function acceleration(others, G, dt){
-        let posicoes = [];
-        let aceleracoes = []
-        let tpasso = dt*0.5
-        for (let i = 0; i <= others.length - 1; i++){
-            
-            let kvec = new Vector(0,0);
-            
-            kvec = kvec.sum(others[i].pos)
-            
+export function acceleration(ball, balls, G, dt, v){ 
+    let acc = new Vector(0,0); 
+    for (let b of balls){ 
+    if (b === ball) continue; 
+    let newpos = new Vector(0,0); 
+    newpos = newpos.sum(ball.pos).sum(v.ProdutoEscalar(dt)) 
+    let rvec = ball.pos.subtr(b.pos); let rversor = rvec.unit(); 
+    let ForceMag = -1*(b.mass*G)/((rvec.mag())**2 + 1e-6); 
+    acc = acc.sum(rversor.ProdutoEscalar(ForceMag)); 
 
-            posicoes.push(kvec);
-        }
-        
-        for (let i = 0; i <= others.length - 1; i++){
-            let acc = new Vector(0,0);
-            for (let j = 0; j <= others.length - 1; j++){
-                if (j === i) continue;
-                let rvec = posicoes[j].subtr(posicoes[i]);
-                let rversor = rvec.unit();
-                
-                let ForceMag = (others[j].mass*G)/((rvec.mag())**2 + 1e-6);
-                
-                acc = acc.sum(rversor.ProdutoEscalar(ForceMag));
-                
-                
-            }
-            aceleracoes.push(acc);
-            
-        }
-        
-        
-        return aceleracoes
+}; 
+return acc 
 };
 
 
 
 
-export function attaRK4(dt,balls,G){
-    let leap = dt*dt*0.5;
-    let a_n = acceleration(balls, G, dt)
-    for(let i = 0; i <= balls.length - 1; i++){
-        balls[i].pos = balls[i].pos.sum(balls[i].vel.ProdutoEscalar(dt)).sum(a_n[i].ProdutoEscalar(leap));
-    };
-    let a_n1 = acceleration(balls, G, dt);
-    for(let i = 0; i <= balls.length - 1; i++){
-        balls[i].vel = balls[i].vel.sum((a_n[i].sum(a_n1[i]).ProdutoEscalar(dt*0.5)));
-    };  
+export function attaRK4(dt,balls,G){ 
+    for(let i = 0; i <= balls.length - 1; i++){ 
+    let dx = new Vector(0,0); let a_xn = new Vector(0,0); 
+    a_xn = a_xn.sum(acceleration(balls[i], balls, G, 0, balls[i].vel)); 
+    dx = dx.sum(balls[i].vel.ProdutoEscalar(dt)).sum(a_xn.ProdutoEscalar((dt**2)/2)); 
+    let a_xnup = new Vector(0,0); 
+    a_xnup = a_xnup.sum(acceleration(balls[i], balls, G, 0, balls[i].vel)) 
+    let dv = new Vector(0,0); 
+    dv = dv.sum(a_xn).sum(a_xnup).ProdutoEscalar(dt/2); 
+    balls[i].pos = balls[i].pos.sum(dx); balls[i].vel = balls[i].vel.sum(dv); 
 
+}; 
 };
