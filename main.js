@@ -22,21 +22,18 @@ planeta1.cor = "red"
 let planeta2 = new Ball(150, 440, 10, 1000);
 planeta2.vel = new Vector(0, -20);
 planeta2.cor = "red"
+
 function addTrail() {
     
-    ctx.fillStyle = "rgba(47, 234, 10, 0.98)";
+    ctx.fillStyle = "rgba(3, 3, 3, 0)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function loop(){
-    addTrail()
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    attaRK4(dt,BALLZ, G);
-    for(let b of BALLZ){
-       
-       
-       
+    addTrail()  //add a funcao rastro
+
+    attaRK4(dt,BALLZ, G);  //add a fisica
+    for(let b of BALLZ){ 
     b.desenharBola()
     }
     
