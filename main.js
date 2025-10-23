@@ -23,16 +23,42 @@ let planeta2 = new Ball(150, 440, 10, 1000);
 planeta2.vel = new Vector(0, -20);
 planeta2.cor = "red"
 
-function addTrail() {
+
+
+
+//----------Funçōes--------//
+
+const trail = []
+function desenharRastro(Ball) {
+    trail.push({x: Ball.x, y: Ball.y});
     
-    ctx.fillStyle = "rgba(3, 3, 3, 0)";
+    ctx.beginPath();
+    ctx.moveTo(trail[0].x, trail[0].y);
+    for (let i = 1; i < trail.length; i++) {
+        ctx.lineTo(trail[i].x, trail[0].y);
+    }
+
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.setLineDash([])
+}
+
+
+function addTrail() {  //adiciona o "fade", se diminuir muito a opacidade fica marcado onde ele passou
+    
+    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";   //mudem o ultimo parametro pra voces entenderem a opacidade
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function loop(){
+
+function loop(){    //loop que faz a animação
+
     addTrail()  //add a funcao rastro
 
     attaRK4(dt,BALLZ, G);  //add a fisica
+
+    //ctx.clearRect(0, 0, canvas.width, canvas.height);  //COMENTE ESSA LINHA PARA OS RASTROS FUNCIONAREM
+
     for(let b of BALLZ){ 
     b.desenharBola()
     }
@@ -40,8 +66,5 @@ function loop(){
     console.log(terra.vel)
    
         requestAnimationFrame(loop);
-   
-   
-
-}
+}   
 loop();
