@@ -1,4 +1,4 @@
-import { BALLZ, Ball, Vector, acceleration, attaRK4 } from "./funcoes.js";
+import { BALLZ, Ball, Vector, acceleration, attaRK4, Camera, applyCameraTransform, scale} from "./funcoes.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -24,8 +24,6 @@ planeta2.vel = new Vector(0, -20);
 planeta2.cor = "red"
 
 
-
-
 //----------Funçōes--------//
 
 
@@ -35,14 +33,20 @@ function addTrail() {  //adiciona o "fade", se diminuir muito a opacidade fica m
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+Camera(canvas);
+
 
 function loop(){    //loop que faz a animação
 
-    //addTrail()  //add a funcao rastro
+    //addTrail()  //ativa a funcao rastro que é mais um fade
+
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);  //COMENTE ESSA LINHA PARA O addTrail FUNCIONAR
+
+    applyCameraTransform(ctx)
 
     attaRK4(dt,BALLZ, G);  //add a fisica
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);  //COMENTE ESSA LINHA PARA O addTrail FUNCIONAR
 
     for(let b of BALLZ){ 
     b.desenharBola()

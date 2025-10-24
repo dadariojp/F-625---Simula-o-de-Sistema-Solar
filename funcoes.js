@@ -3,6 +3,54 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+
+export let scale = 1;
+const zoomFactor = 1.1; //NUNCA COLOCAR 1, qualquer outro numero funciona
+
+window.offsetX = 0;
+window.offsetY = 0;
+export let offsetX = 0;
+export let offsetY = 0;
+
+export function Camera(canvas) {
+    let isDragging = false;
+    let startX, startY;
+
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX - offsetX;
+        startY = e.clientY - offsetY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            offsetX = e.clientX - startX;
+            offsetY = e.clientY - startY;
+        }
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+    
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left - offsetX) / scale;
+        const mouseY = (e.clientY - rect.top - offsetY) / scale;
+
+        const zoomAmount = e.deltaY < 0 ? zoomFactor : 1 / zoomFactor;
+        scale *= zoomAmount;
+
+        offsetX = e.clientX - rect.left - mouseX * scale;
+        offsetY = e.clientY - rect.top - mouseY * scale;
+    });
+}
+
+export function applyCameraTransform(ctx) {
+    ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+}
+
+
 export  const BALLZ = []
 export class Vector{
     constructor(x,y){
