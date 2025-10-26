@@ -3,16 +3,28 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-
-export let scale = 0.5;
+export let scale = 0.3;
 const zoomFactor = 1.1; //NUNCA COLOCAR 1, qualquer outro numero funciona
 
-export let offsetX = canvas.width / 2; 
-export let offsetY = canvas.height / 2;
+window.offsetX = 0;
+window.offsetY = 0;
+export let offsetX = 0;
+export let offsetY = 0;
 
 export function Camera(canvas) {
     let isDragging = false;
     let startX, startY;
+
+    // Configurar scale inicial
+    scale = 0.3; // SEU VALOR DESEJADO
+
+    // CENTRALIZAR NO SOL considerando o scale
+    const SOL_X = 2;
+    const SOL_Y = 1;
+    const UA_TO_PIXELS = 1000;
+    
+    offsetX = canvas.width / 2 - SOL_X * UA_TO_PIXELS * scale;
+    offsetY = canvas.height / 2 - SOL_Y * UA_TO_PIXELS * scale;
 
     canvas.addEventListener('mousedown', (e) => {
         isDragging = true;
@@ -45,6 +57,7 @@ export function Camera(canvas) {
 }
 
 export function applyCameraTransform(ctx) {
+    console.log("Camera transform:", scale, offsetX, offsetY);
     ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 }
 
@@ -85,32 +98,52 @@ export class Ball{
         BALLZ.push(this);
         this.trail = [];
     }
-    desenharRastro() {  
-        this.trail.push({x: this.pos.x, y: this.pos.y}); 
-        if (this.trail.length > 500) this.trail.shift(); 
+    desenharBola(UAtoPX, raioPX = null) {
+    const px = this.pos.x * UAtoPX;
+    const py = this.pos.y * UAtoPX;
+    const raio = this.r;
 
-        if (this.trail.length > 1) {
-            ctx.beginPath();
-            ctx.moveTo(this.trail[0].x, this.trail[0].y);
-            for (let i = 1; i < this.trail.length; i++) {
-                ctx.lineTo(this.trail[i].x, this.trail[i].y);
-            }
-            ctx.setLineDash([5,5]);
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-    }
-    desenharBola(){
-    ctx.beginPath();
-    ctx.arc(this.pos.x, this.pos.y, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = this.cor;
-    ctx.fill();
-    ctx.closePath();
-        
+    // Gradiente para o Sol
+    if (this.cor === "yellow" || this.cor === "#FFD700") {
+        const gradient = ctx.createRadialGradient(px, py, 0, px, py, raio);
+        gradient.addColorStop(0, "#FFFF00");
+        gradient.addColorStop(0.7, "#FFA500");
+        gradient.addColorStop(1, "#FF4500");
+        ctx.fillStyle = gradient;
+    } else {
+        ctx.fillStyle = this.cor;
     }
     
+    ctx.beginPath();
+    ctx.arc(px, py, raio, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.closePath();
+}
+    desenharRastro(UAtoPX) {
+    this.trail.push({x: this.pos.x, y: this.pos.y});
+    if (this.trail.length > 200) this.trail.shift(); // Controla comprimento
+
+    if (this.trail.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX);
+        
+        // Gradiente para o rastro
+        const gradient = ctx.createLinearGradient(
+            this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX,
+            this.trail[this.trail.length-1].x * UAtoPX, this.trail[this.trail.length-1].y * UAtoPX
+        );
+        gradient.addColorStop(0, "rgba(255,255,255,0.8)");
+        gradient.addColorStop(1, "rgba(255,255,255,0.1)");
+        
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1.5;
+        
+        for (let i = 1; i < this.trail.length; i++) {
+            ctx.lineTo(this.trail[i].x * UAtoPX, this.trail[i].y * UAtoPX);
+        }
+        ctx.stroke();
+    }
+}
 };
 
 export function acceleration(ball, balls, G){ 
@@ -143,7 +176,7 @@ export function accrk2mid(posicoesintermediarias, ball, balls, j, G){
     }
     return acc 
 }
-   
+
 
 export function energiaMecanica(balls, G) {
     let energiaCin = 0;
@@ -168,8 +201,50 @@ export function energiaMecanica(balls, G) {
 }
 
 
+export function convertVelocityUAYearToPixelsSec(velocityUAYear, UA_TO_PIXELS) {
+    
+    const SECONDS_PER_YEAR = 365.25 * 24 * 60 * 60;
+    const velocityUASec = velocityUAYear / SECONDS_PER_YEAR;
+    
+    
+    const velocityPixelsSec = velocityUASec * UA_TO_PIXELS;
+    
+    return velocityPixelsSec;
+}
+
+
+
+
+export function calcularExcentricidade(planeta, sol, G) {
+    // posição relativa
+    const rx = planeta.pos.x - sol.pos.x;
+    const ry = planeta.pos.y - sol.pos.y;
+    const r = Math.hypot(rx, ry);
+
+    // velocidade relativa
+    const vx = planeta.vel.x - sol.vel.x;
+    const vy = planeta.vel.y - sol.vel.y;
+
+    // h = r × v  (em 2D vira pseudo-escalar)
+    const h = rx * vy - ry * vx;
+
+    const mu = G * (sol.mass + planeta.mass);
+
+    // componente do vetor e
+    const ex = (vy * h) / mu - (rx / r);
+    const ey = (-vx * h) / mu - (ry / r);
+
+    const e = Math.hypot(ex, ey); // módulo da excentricidade
+
+    return e;
+}
+
+
+
+
+
 export function attaRK4(dt, balls, G) {
-    // 1️⃣ Copia o estado inicial (posições e velocidades)
+    // Copia o estado inicial (posições e velocidades)
     let pos0 = balls.map(b => new Vector(b.pos.x, b.pos.y));
     let vel0 = balls.map(b => new Vector(b.vel.x, b.vel.y));
 
@@ -237,3 +312,4 @@ export function attaRK4(dt, balls, G) {
         balls[i].vel = balls[i].vel.sum(deltaV);
     }
 }
+

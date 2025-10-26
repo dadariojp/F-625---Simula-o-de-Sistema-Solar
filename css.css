@@ -1,0 +1,36 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background: 
+        radial-gradient(ellipse at center, #0a0e2a 0%, #000000 100%);
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background-image: 
+        radial-gradient(white 1px, transparent 1px),
+        radial-gradient(white 1px, transparent 1px);
+    background-size: 50px 50px, 80px 80px;
+    background-position: 0 0, 25px 25px;
+    animation: starsMove 200s linear infinite;
+    opacity: 0.3;
+}
+
+@keyframes starsMove {
+    from { transform: translate(0, 0); }
+    to { transform: translate(-50%, -50%); }
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+}
