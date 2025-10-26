@@ -1,4 +1,4 @@
-import { BALLZ, Ball, Vector, acceleration, attaRK4, Camera, applyCameraTransform, scale} from "./funcoes.js";
+import { BALLZ, Ball, Vector, energiaMecanica,  acceleration,accrk2mid, attaRK4, Camera, applyCameraTransform, scale} from "./funcoes.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -7,21 +7,19 @@ canvas.height = window.innerHeight;
 
 
 const G =1;
-const dt = 0.5;
-const sol = new Ball(660, 440, 40, 100000);
+const dt = 5;
+const sol = new Ball(0, 0, 40, 10000);
 sol.vel = new Vector(0,0);
-const terra = new  Ball( 300,  440, 5, 100);
+sol.cor = "yellow";
+const terra = new  Ball(30,  440, 20, 1);
 terra.cor = "blue";
-terra.vel = new Vector(0, -17);
-const lua = new  Ball( 295,  440, 1, 1);
-lua.vel = new Vector(0, -13);
-lua.cor= "white"
-let planeta1 = new Ball(500, 440, 4, 100);
-planeta1.vel = new Vector(0, -20);
-planeta1.cor = "red"
-let planeta2 = new Ball(150, 440, 10, 1000);
-planeta2.vel = new Vector(0, -20);
-planeta2.cor = "red"
+terra.vel = new Vector(0, 1);
+const lua = new Ball(0, 440, 10, 0.1);
+lua.vel = new Vector(0, 0.8);
+lua.cor = "red";
+let planeta1 = new Ball(3000, 440, 10, 0.8);
+planeta1.vel = new Vector(0, 1);
+
 
 
 //----------Funçōes--------//
@@ -53,8 +51,9 @@ function loop(){    //loop que faz a animação
     b.desenharRastro()
     }
     
-    console.log(terra.vel)
-   
+    let energiamecanica = energiaMecanica(BALLZ, G);
+    
+    console.log("energiamecanica", energiamecanica);
         requestAnimationFrame(loop);
 }   
 loop();
