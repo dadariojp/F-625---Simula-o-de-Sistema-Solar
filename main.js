@@ -1,6 +1,6 @@
-import { BALLZ, Ball, Vector, energiaMecanica,calcularExcentricidade,  convertVelocityUAYearToPixelsSec,
+import { BALLZ, Ball, Vector, energiaMecanica, calcularExcentricidade,  convertVelocityUAYearToPixelsSec,
     acceleration,accrk2mid, attaRK4, Camera, applyCameraTransform, brilho,
-    setOffset, setScale, getOffset, getScale
+    setOffset, setScale, getOffset, getScale, atualizarPainelPlaneta
 
 } from "./funcoes.js";
 
@@ -20,168 +20,59 @@ const dt = 0.00019;
 // Sistema solar centralizado
 const sol = new Ball(2, 1, 400, 1);
 sol.vel = new Vector(0,0);
-sol.aparencia.gradiente = {
-    cores: [
-        { cor: '#FFFF00' }, // Amarelo brilhante (núcleo)
-        { cor: '#FFA500' }, // Laranja (fotosfera)
-        { cor: '#FF4500' }, // Vermelho-laranja (cromosfera)
-        { cor: '#8B0000' }  // Vermelho escuro (manchas solares)
-    ]
-};
-sol.aparencia.brilho = {
-    intensidade: 80,
-    cor: '#FFFFAA',
-    tamanho: 30
-};
 
 const terra = new Ball(2+1, 1, 20, 3e-6);
 terra.cor = "blue";
 let vterra = convertVelocityUAYearToPixelsSec(6.28, UA_TO_PIXELS);
 console.log("vterra", vterra);
 terra.vel = new Vector(0, 6.28);
-terra.aparencia.tipo = 'gradiente';
-terra.aparencia.gradiente = {
-    cores: [
-        { cor: '#87CEEB' },
-        { cor: '#1E90FF' },
-        { cor: '#32CD32' },
-        { cor: '#8B4513' }
-    ]
-};
-
 
 const lua = new Ball(2+1 + 0.0026, 1, 0.5, 20.7e-8);
 let vlua = convertVelocityUAYearToPixelsSec(0.21, UA_TO_PIXELS);
 lua.vel = new Vector(0, 6.28 + 0.21);
-lua.aparencia.tipo = 'gradiente';
-lua.aparencia.gradiente = {
-    cores: [
-        { cor: '#F5F5F5' },
-        { cor: '#C0C0C0' },
-        { cor: '#808080' },
-        { cor: '#4A4A4A' }
-    ]
-};
-
 
 let mercurio = new Ball(2+ 0.39, 1, 10, 1e-7);
 mercurio.vel = new Vector(0, 10.21);
-mercurio.aparencia.tipo = 'gradiente';
-mercurio.aparencia.gradiente = {
-    cores: [
-        { cor: '#BEBEBE' },
-        { cor: '#8C8C8C' },
-        { cor: '#696969' },
-        { cor: '#4F4F4F' }
-    ]
-};
 
 let venus = new Ball(2 + 0.72, 1, 20, 2.45e-6);
 venus.vel = new Vector(0, 7.29);
-venus.aparencia.tipo = 'gradiente';
-venus.aparencia.gradiente = {
-    cores: [
-        { cor: '#FFE4B5' },
-        { cor: '#DEB887' },
-        { cor: '#A0522D' },
-        { cor: '#8B4513' }
-    ]
-};
-
 
 let marte = new Ball(2 + 1.52, 1, 20, 3.23e-7);
 marte.vel = new Vector(0, 5.08);
-marte.aparencia.tipo = 'gradiente';
-marte.aparencia.gradiente = {
-    cores: [
-        { cor: '#FF7F50' },
-        { cor: '#CD5C5C' },
-        { cor: '#8B0000' },
-        { cor: '#8B4513' }
-    ]
-};
 
 let jupter = new Ball(2 + 5.2, 1, 30, 9.55e-4);
 jupter.vel = new Vector(0, 2.75);
-jupter.aparencia.tipo = 'gradiente';
-jupter.aparencia.gradiente = {
-    cores: [
-        { cor: '#F5DEB3' },
-        { cor: '#DEB887' },
-        { cor: '#A0522D' },
-        { cor: '#8B4513' }
-    ]
-};
-
 
 let saturno = new Ball(2 + 9.58, 1, 30, 2.86e-4);
 saturno.vel = new Vector(0, 2.03);
-saturno.aparencia.tipo = 'gradiente';
-saturno.aparencia.gradiente = {
-    cores: [
-        { cor: '#F0E68C' },
-        { cor: '#DAA520' },
-        { cor: '#CD853F' },
-        { cor: '#A0522D' }
-    ]
-};
-saturno.aparencia.aneis = {
-    largura: 18,
-    alturaRelativa: 0.2,
-    opacidade: 1,
-    inclinacao: 0.5,
-    // Padrão de listras alternadas
-    listras: [
-        { cor: 'rgba(245, 222, 179, 0.9)' }, // Dourado claro
-        { cor: 'rgba(210, 180, 140, 0.7)' }, // Dourado médio
-        { cor: 'rgba(184, 134, 11, 0.8)' },  // Dourado escuro
-        { cor: 'rgba(210, 180, 140, 0.6)' }, // Dourado médio
-        { cor: 'rgba(245, 222, 179, 0.9)' }, // Dourado claro
-        { cor: 'rgba(184, 134, 11, 0.7)' },  // Dourado escuro
-        { cor: 'rgba(210, 180, 140, 0.8)' }, // Dourado médio
-        { cor: 'rgba(245, 222, 179, 0.9)' }  // Dourado claro
-    ]
-};
-saturno.aparencia.brilho = {
-    intensidade: 0,
-    cor: '#DEB887',
-    tamanho: 22
-};
-
 
 let urano = new Ball(2 + 19.2, 1, 20, 4.37e-5);
 urano.vel = new Vector(0, 1.44);
-urano.aparencia.tipo = 'gradiente';
-urano.aparencia.gradiente = {
-    cores: [
-        { cor: '#B0E0E6' },
-        { cor: '#87CEEB' },
-        { cor: '#4682B4' },
-        { cor: '#1E90FF' }
-    ]
-};
-
 
 let netuno = new Ball(2 + 30, 1, 70, 5.15e-5);
 netuno.vel = new Vector(0,  1.15);
-netuno.aparencia.tipo = 'gradiente';
-netuno.aparencia.gradiente = {
-    cores: [
-        { cor: '#1E90FF' },
-        { cor: '#0000CD' },
-        { cor: '#000080' },
-        { cor: '#191970' }
-    ]
-};
+
 
 Camera(canvas);
+terra.carregarImagem('imagens/terrapixel.png');
+saturno.carregarImagem('imagens/saturnopixel.png')
+mercurio.carregarImagem("imagens/mercuriopixel.png")
+venus.carregarImagem("imagens/venuspixel.png");
+jupter.carregarImagem("imagens/jupiterpixel.png");
+urano.carregarImagem("imagens/uranopixel.png");
+netuno.carregarImagem("imagens/netunopixel.png");
+marte.carregarImagem("imagens/martepixel.png")
+sol.carregarImagem("imagens/solpixel.png")
+lua.carregarImagem("imagens/luxpixel.png");
+
+
 
 function addTrail() {
     ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-let stars = [];
+let stars = []
 export function criarFundoEstrelado() {
     for (let i = 0; i < 500; i++) {
         stars.push({
@@ -192,8 +83,6 @@ export function criarFundoEstrelado() {
         });
     }
 }
-
-
 export function desenharEstrelas() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     stars.forEach(star => {
@@ -203,12 +92,8 @@ export function desenharEstrelas() {
         ctx.fill();
     });
 }
-
-
 criarFundoEstrelado();
 desenharEstrelas();
-
-let showTrails = true;
 
 function desenharInterface() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -250,7 +135,6 @@ painel.style.backdropFilter = "blur(5px)";
 painel.style.border = "1px solid rgba(255, 255, 255, 0.1)";
 document.body.appendChild(painel);
 
-// Função para atualizar o painel
 function atualizarPainel() {
     const energiamecanica = energiaMecanica(BALLZ, G);
     const eterra = calcularExcentricidade(terra, sol, G);
@@ -273,29 +157,6 @@ function atualizarPainel() {
 }
 
 
-
-function focarNoPlaneta(nomePlaneta) {
-    let planeta;
-    
-    switch(nomePlaneta) {
-        case 'sol': planeta = sol; break;
-        case 'mercurio': planeta = mercurio; break;
-        case 'venus': planeta = venus; break;
-        case 'terra': planeta = terra; break;
-        case 'lua': planeta = lua; break;
-        case 'marte': planeta = marte; break;
-        case 'jupter': planeta = jupter; break;
-        case 'saturno': planeta = saturno; break;
-        case 'urano': planeta = urano; break;
-        case 'netuno': planeta = netuno; break;
-    }
-    
-    if (planeta) {
-        window.planetaSeguido = planeta;
-        console.log(`Seguindo: ${nomePlaneta}`);
-    }
-}
-
 // Função resetarCamera
 function resetarCamera() {
     window.planetaSeguido = null;
@@ -313,7 +174,7 @@ function resetarCamera() {
 }
 
 
-
+let showTrails = true;
 
 function loop() {
 
@@ -328,6 +189,7 @@ for(let b of BALLZ) {
     // Atualiza a câmera (IMPORTANTE: deve ser chamado antes de applyCameraTransform)
     atualizarCamera();
 
+
     // Aplica a transformação da câmera
     applyCameraTransform(ctx);
 
@@ -336,24 +198,26 @@ for(let b of BALLZ) {
 
     // Desenha os planetas
     for(let b of BALLZ) {
-        b.desenharBola(UA_TO_PIXELS);
-        if (showTrails) {
-            b.desenharRastro(UA_TO_PIXELS);
-        }
+        // Usando raio fixo de 4 pixels para melhor visualização
+        b.desenharBola(UA_TO_PIXELS, 4);
+        b.desenharRastro(UA_TO_PIXELS);
+        b.desenharPainel();
     }
+    
 
     // Remove a transformação da câmera
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    // Desenha as estrelas
     desenharEstrelas();
 
     // Atualiza o painel de informações
     atualizarPainel();
 
+    atualizarPainelPlaneta();
+
     // Incrementa o tempo
     tempo += dt;
-    
+
     requestAnimationFrame(loop);
 }
 loop();

@@ -3,6 +3,12 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+const painelPlaneta = document.createElement("div");
+painelPlaneta.id = "painelPlaneta";
+// (usar mesmo estilo do painel do main.js, mas position: absolute; top: 20px; right: 20px;)
+painelPlaneta.style.display = "none";
+document.body.appendChild(painelPlaneta);
+
 const zoomFactor = 1.1; //NUNCA COLOCAR 1, qualquer outro numero funciona
 
 window.offsetX = 0;
@@ -110,6 +116,8 @@ export function Camera(canvas, UA_TO_PIXELS) { // Adicione UA_TO_PIXELS como par
 
     return atualizarCamera;
 }
+
+
 export function applyCameraTransform(ctx) {
     console.log("Camera transform:", scale, offsetX, offsetY);
     ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
@@ -121,13 +129,10 @@ export class Vector{
     constructor(x,y){
     this.x = x;
     this.y = y;
-
     }
-    
     sum(v2){
        return new Vector(this.x + v2.x, this.y + v2.y)
     }
-    
     subtr(v2){
        return new Vector(this.x - v2.x, this.y - v2.y)
     }
@@ -142,172 +147,128 @@ export class Vector{
     }
 }
 export class Ball{
-    constructor(x,y,r, m){
+    constructor(x,y,r, m, nome = 'name',densidade='d',numerodesatelites='ns', numerodeaneis ='nda', classificação='tdpl' ){
+        this.tdpl=classificação
+        this.nda=numerodeaneis 
+        this.ns = numerodesatelites
+        this.d = densidade
+        this.name = nome 
+        this.clicado = false
         this.pos = new Vector(x,y);
         this.vel = new Vector(0,0);
         this.acc = new Vector(0,0);
         this.r = r;
-        this.mass = m;
-        this.cor = "gray";
-        this.aparencia = {
-            tipo: 'solido',
-            cor: this.cor,
-            gradiente: null,
-            brilho: {
-                intensidade: 0,
-                cor: '#FFFFFF',
-                tamanho: 0
-            },
-            aneis: null
-        };
+        this.mass = m
+        this.cor = "yellow";
         BALLZ.push(this);
         this.trail = [];
+        this.lastAngle = null;         // ângulo do passo anterior
+        this.angleAccumulator = 0;     // soma acumulada de Δθ
+        this.orbitStartTime = null;    // tempo do começo da volta atual
+        this.period = null;
+        this.periododeorbita = 'calculando'
+        this.image = new Image();
+        this.imagemCarregada = false;
+        this.usarImagem = false;
     }
-
+    carregarImagem(caminho) {
+        this.image.src = caminho;
+        this.usarImagem = true;
+        
+        this.image.onload = () => {
+            console.log(`Imagem de ${this.name} carregada com sucesso!`);
+            this.imagemCarregada = true;
+        };
+        this.image.onerror = () => {
+            console.error(`Erro ao carregar imagem: ${caminho}`);
+            this.imagemCarregada = false;
+            this.usarImagem = false;
+        };
+    }
+    desenharPainel(){
+        if (this.clicado === true){
+        const painel = document.createElement("div");
+        painel.id = "painelInfo";
+        painel.style.position = "absolute";
+        painel.style.top = "5px";
+        painel.style.right = "5px";
+        painel.style.background = "rgba(4, 2, 34, 0.8)";
+        painel.style.color = "white";
+        painel.style.padding = "10px";
+        painel.style.borderRadius = "8px";
+        painel.style.display = "none";
+        painel.style.fontFamily = "monospace";
+        painel.style.fontSize="14px";
+        painel.style.width="260px";
+        painel.style.boxshadow="0 0 10px rgba(255, 255, 255, 0.3)";
+        document.body.appendChild(painel);
+        painel.style.display = "block";
+        painel.innerHTML = `
+    <h3 style="margin-top:0;"> ${this.name}</h3>
+    <p><b>Posição(em UA):</b> (${this.pos.x.toFixed(3)}, ${this.pos.y.toFixed(3)})</p>
+    <p><b>Velocidade(UA/ano):</b> (${this.vel.x.toFixed(5)}, ${this.vel.y.toFixed(5)})</p>
+    <hr style="border-color:#444;">
+    <p><b>Massa(em massas solares):</b> ${this.mass.toExponential(3)} </p>
+    <p><b>Período de órbita (em anos): </b> ${this.period}</p>
+    <p><b>Densidade(em g/cm^3): </b> ${this.d}</p>
+    <p><b>Número de satélites: </b>${this.ns} </p>
+    <p><b>Temperatura média na superficie a 1bar(em K): </b>${this.nda}</p>
+    <p><b>Classificação: </b>${this.tdpl}</p>
+    
+    
+    <hr style="border-color:#444;">
+    `
+        }
+};
     desenharBola(UAtoPX, raioPX = null) {
         const px = this.pos.x * UAtoPX;
         const py = this.pos.y * UAtoPX;
-        const raio = raioPX || this.r;
+        const raio = this.r;
 
-        // 1º: Anéis (SE houver, desenhamos ATRÁS do planeta)
-        if (this.aparencia.aneis) {
-            this.desenharAneis(px, py, raio);
-        }
-
-        // 2º: Glow externo do planeta
-        if (this.aparencia.brilho && this.aparencia.brilho.tamanho > 0) {
-            this.desenharGlowExterno(px, py, raio);
-        }
-
-        // 3º: Planeta em si
-        ctx.beginPath();
-        ctx.arc(px, py, raio, 0, Math.PI * 2);
-        
-        if (this.aparencia.tipo === 'gradiente' && this.aparencia.gradiente) {
-            this.aplicarGradiente(px, py, raio);
-        } else {
-            ctx.fillStyle = this.aparencia.cor || this.cor;
-        }
-        
-        ctx.fill();
-        ctx.closePath();
-
-        // 4º: Brilho interno do planeta
-        if (this.aparencia.brilho && this.aparencia.brilho.intensidade > 0) {
-            this.desenharBrilhoInterno(px, py, raio);
-        }
-    }
-
-    desenharGlowExterno(px, py, raio) {
-        const brilho = this.aparencia.brilho;
-        const gradient = ctx.createRadialGradient(
-            px, py, raio,
-            px, py, raio + brilho.tamanho
-        );
-        gradient.addColorStop(0, brilho.cor);
-        gradient.addColorStop(1, 'transparent');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(px, py, raio + brilho.tamanho, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    desenharBrilhoInterno(px, py, raio) {
-        const brilho = this.aparencia.brilho;
-        ctx.globalAlpha = brilho.intensidade / 100;
-        ctx.fillStyle = brilho.cor;
-        ctx.beginPath();
-        ctx.arc(px, py, raio, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1.0;
-    }
-
-    aplicarGradiente(px, py, raio) {
-        const gradiente = ctx.createRadialGradient(
-            px, py, 0,
-            px, py, raio
-        );
-        this.aparencia.gradiente.cores.forEach((corInfo, index) => {
-            const stop = index / (this.aparencia.gradiente.cores.length - 1);
-            gradiente.addColorStop(stop, corInfo.cor);
-        });
-        ctx.fillStyle = gradiente;
-    }
-
-    desenharAneis(px, py, raio) {
-    if (!this.aparencia.aneis) return;
-    
-    const aneis = this.aparencia.aneis;
-    
-    ctx.save();
-    ctx.translate(px, py);
-    
-    // Apenas inclinação fixa, SEM rotação
-    ctx.rotate(aneis.inclinacao || 0.5);
-    
-    const largura = aneis.largura || 15;
-    const altura = raio * (aneis.alturaRelativa || 0.2);
-    
-    // Cria um padrão de listras com gradiente linear
-    const gradient = ctx.createLinearGradient(
-        -raio - largura, 0,
-        raio + largura, 0
-    );
-    
-    // Adiciona múltiplas faixas de cores para criar o efeito de listras
-    if (aneis.listras) {
-        // Usa as cores definidas para as listras
-        aneis.listras.forEach((listra, index) => {
-            const posicao = index / aneis.listras.length;
-            gradient.addColorStop(posicao, listra.cor);
-        });
-    } else {
-        // Fallback: padrão de listras claro/escuro
-        gradient.addColorStop(0, 'rgba(245, 222, 179, 0.9)');
-        gradient.addColorStop(0.2, 'rgba(210, 180, 140, 0.7)');
-        gradient.addColorStop(0.4, 'rgba(245, 222, 179, 0.8)');
-        gradient.addColorStop(0.6, 'rgba(210, 180, 140, 0.6)');
-        gradient.addColorStop(0.8, 'rgba(245, 222, 179, 0.7)');
-        gradient.addColorStop(1, 'rgba(210, 180, 140, 0.5)');
-    }
-    
-    ctx.fillStyle = gradient;
-    ctx.globalAlpha = aneis.opacidade || 0.7;
-    
-    // Desenha o anel como uma elipse
-    ctx.beginPath();
-    ctx.ellipse(0, 0, raio + largura, altura, 0, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.restore();
-}
-    desenharRastro(UAtoPX) {
-        this.trail.push({x: this.pos.x, y: this.pos.y});
-        if (this.trail.length > 200) this.trail.shift();
-
-        if (this.trail.length > 1) {
-            ctx.beginPath();
-            ctx.moveTo(this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX);
-            
-            // Gradiente para o rastro
-            const gradient = ctx.createLinearGradient(
-                this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX,
-                this.trail[this.trail.length-1].x * UAtoPX, this.trail[this.trail.length-1].y * UAtoPX
+        // Tenta usar a imagem se estiver disponível
+        if (this.usarImagem && this.imagemCarregada && this.image.complete && this.image.naturalWidth > 0) {
+            ctx.drawImage(
+                this.image,
+                px - raio,
+                py - raio,
+                raio * 2,
+                raio * 2
             );
-            gradient.addColorStop(0, "rgba(255,255,255,0.8)");
-            gradient.addColorStop(1, "rgba(255,255,255,0.1)");
-            
-            ctx.strokeStyle = gradient;
-            ctx.lineWidth = 1.5;
-            
-            for (let i = 1; i < this.trail.length; i++) {
-                ctx.lineTo(this.trail[i].x * UAtoPX, this.trail[i].y * UAtoPX);
-            }
-            ctx.stroke();
+        } else {
+            // Fallback para o círculo colorido
+            ctx.beginPath();
+            ctx.arc(px, py, raio, 0, Math.PI * 2);
+            ctx.fillStyle = this.cor;
+            ctx.fill();
+            ctx.closePath();
         }
     }
+    desenharRastro(UAtoPX) {
+     if (this.period === null) {
+        // Ainda não completou uma órbita, continua acumulando
+        this.trail.push({x: this.pos.x, y: this.pos.y});
+    } else {
+        // Já completou uma órbita, mantém apenas pontos equivalentes a 1 período
+        const pontosPorPeriodo = Math.min(this.trail.length, 8000);
+        this.trail = this.trail.slice(-pontosPorPeriodo);
+        
+        // ⚠️ IMPORTANTE: Para de adicionar novos pontos após período detectado
+        // this.trail.push({x: this.pos.x, y: this.pos.y}); // REMOVER esta linha
+    }
+    if (this.trail.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX);
+        for (let i = 1; i < this.trail.length; i++) {
+            ctx.lineTo(this.trail[i].x * UAtoPX, this.trail[i].y * UAtoPX);
+        }
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
 }
+};
 
 export function acceleration(ball, balls, G){ 
     let acc = new Vector(0,0); 
@@ -361,7 +322,7 @@ export function energiaMecanica(balls, G) {
     }
 
     return energiaCin + energiaPot;
-}
+};
 
 
 export function convertVelocityUAYearToPixelsSec(velocityUAYear, UA_TO_PIXELS) {
@@ -476,3 +437,61 @@ export function attaRK4(dt, balls, G) {
     }
 }
 
+
+const painel = document.createElement("div");
+painel.id = "painelInfo";
+painel.style.position = "absolute";
+painel.style.top = "20px";
+painel.style.right = "20px";
+painel.style.background = "rgba(0, 0, 0, 0.8)";
+painel.style.color = "white";
+painel.style.padding = "10px";
+painel.style.borderRadius = "8px";
+painel.style.display = "none";
+painel.style.fontFamily = "monospace";
+painel.style.fontSize="14px";
+painel.style.width="260px";
+painel.style.boxshadow="0 0 10px rgba(255, 255, 255, 0.3)";
+document.body.appendChild(painel);
+
+// === Função para detectar clique em um planeta ===
+function planetaClicado(x, y, UAtoPX) {
+  for (const p of BALLZ) {
+    // Converte posição do planeta para pixels e aplica câmera
+    const px = p.pos.x * UAtoPX * scale + offsetX;
+    const py = p.pos.y * UAtoPX * scale + offsetY;
+
+    // Distância do clique até o planeta
+    const dx = x - px;
+    const dy = y - py;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 10+p.r * scale) {for (const b of BALLZ){
+        if (b.clicado===true) {b.clicado=false}
+    } 
+        p.clicado = true};
+  }
+  return null;
+}
+
+
+// === Função para mostrar informações ===
+export function atualizarPainelPlaneta() {
+    if (!window.planetaSelecionado) {
+        painelPlaneta.style.display = "none";
+        return;
+    }
+    
+    const p = window.planetaSelecionado;
+    painelPlaneta.style.display = "block";
+    painelPlaneta.innerHTML = `
+        <h3>${p.name}</h3>
+        <p><b>Posição:</b> (${p.pos.x.toFixed(3)}, ${p.pos.y.toFixed(3)}) UA</p>
+        <p><b>Velocidade:</b> (${p.vel.x.toFixed(5)}, ${p.vel.y.toFixed(5)}) UA/ano</p>
+        <p><b>Massa:</b> ${p.mass.toExponential(3)} M☉</p>
+        <p><b>Período:</b> ${p.period || 'calculando'} anos</p>
+        <p><b>Densidade:</b> ${p.d} g/cm³</p>
+        <p><b>Satélites:</b> ${p.ns}</p>
+        <p><b>Classificação:</b> ${p.tdpl}</p>
+    `;
+}
