@@ -2,47 +2,98 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+const UA_TO_PIXELS = 500;
 
-export let scale = 0.3;
 const zoomFactor = 1.1; //NUNCA COLOCAR 1, qualquer outro numero funciona
 
 window.offsetX = 0;
 window.offsetY = 0;
+export let brilho = 0;
+
 export let offsetX = 0;
 export let offsetY = 0;
+export let scale = 1;
+
+export function setOffset(x, y) {
+    offsetX = x;
+    offsetY = y;
+}
+export function getOffset() {
+    return { offsetX, offsetY };
+}
+export function setScale(newScale) {
+    scale = newScale;
+}
+export function getScale() {
+    return scale;
+}
+
 
 export function Camera(canvas) {
     let isDragging = false;
     let startX, startY;
+    let planetaFocado = null; // Variável para armazenar o planeta focado
 
-    // Configurar scale inicial
-    scale = 0.3; // SEU VALOR DESEJADO
+    // Configuração inicial
+    scale = 0.3;
+    offsetX = canvas.width / 2 - 2 * UA_TO_PIXELS * scale;
+    offsetY = canvas.height / 2 - 1 * UA_TO_PIXELS * scale;
 
-    // CENTRALIZAR NO SOL considerando o scale
-    const SOL_X = 2;
-    const SOL_Y = 1;
-    const UA_TO_PIXELS = 1000;
-    
-    offsetX = canvas.width / 2 - SOL_X * UA_TO_PIXELS * scale;
-    offsetY = canvas.height / 2 - SOL_Y * UA_TO_PIXELS * scale;
+    // Evento de clique para focar nos planetas
+    canvas.addEventListener('click', (e) => {
+        if (isDragging) return; // Não focar se estiver arrastando
+        
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Converter coordenadas
+        const worldX = (mouseX - offsetX) / scale;
+        const worldY = (mouseY - offsetY) / scale;
+        
+        // Verificar colisão com planetas
+        for (const planeta of BALLZ) {
+            const px = planeta.pos.x * UA_TO_PIXELS;
+            const py = planeta.pos.y * UA_TO_PIXELS;
+            const distancia = Math.sqrt(
+                Math.pow(worldX - px, 2) + 
+                Math.pow(worldY - py, 2)
+            );
+            
+            const margemClique = Math.max(planeta.r * 2, 15);
+            
+            if (distancia <= margemClique) {
+                // Define o planeta focado
+                planetaFocado = planeta;
+                console.log(`Focado em: ${planeta === sol ? 'Sol' : 'Planeta'}`);
+                break;
+            }
+        }
+    });
 
+    // Eventos de arraste e zoom
     canvas.addEventListener('mousedown', (e) => {
         isDragging = true;
         startX = e.clientX - offsetX;
         startY = e.clientY - offsetY;
+        planetaFocado = null; // Para de seguir quando o usuário arrasta
     });
 
     window.addEventListener('mousemove', (e) => {
         if (isDragging) {
             offsetX = e.clientX - startX;
             offsetY = e.clientY - startY;
+            planetaFocado = null; // Para de seguir quando o usuário arrasta
         }
     });
 
-    window.addEventListener('mouseup', () => { isDragging = false; });
+    window.addEventListener('mouseup', () => { 
+        isDragging = false; 
+    });
     
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
+        planetaFocado = null; // Para de seguir quando o usuário faz zoom
 
         const rect = canvas.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - offsetX) / scale;
@@ -54,6 +105,19 @@ export function Camera(canvas) {
         offsetX = e.clientX - rect.left - mouseX * scale;
         offsetY = e.clientY - rect.top - mouseY * scale;
     });
+
+    // Função para atualizar a câmera para seguir o planeta focado
+    function atualizarCamera() {
+        if (planetaFocado) {
+            const px = planetaFocado.pos.x * UA_TO_PIXELS;
+            const py = planetaFocado.pos.y * UA_TO_PIXELS;
+            offsetX = canvas.width / 2 - px * scale;
+            offsetY = canvas.height / 2 - py * scale;
+        }
+    }
+
+    // Retorna a função de atualização para ser chamada no loop
+    return atualizarCamera;
 }
 
 export function applyCameraTransform(ctx) {
@@ -93,58 +157,167 @@ export class Ball{
         this.vel = new Vector(0,0);
         this.acc = new Vector(0,0);
         this.r = r;
-        this.mass = m
-        this.cor = "yellow";
+        this.mass = m;
+        this.cor = "gray";
+        this.aparencia = {
+            tipo: 'solido',
+            cor: this.cor,
+            gradiente: null,
+            brilho: {
+                intensidade: 0,
+                cor: '#FFFFFF',
+                tamanho: 0
+            },
+            aneis: null
+        };
         BALLZ.push(this);
         this.trail = [];
     }
-    desenharBola(UAtoPX, raioPX = null) {
-    const px = this.pos.x * UAtoPX;
-    const py = this.pos.y * UAtoPX;
-    const raio = this.r;
 
-    // Gradiente para o Sol
-    if (this.cor === "yellow" || this.cor === "#FFD700") {
-        const gradient = ctx.createRadialGradient(px, py, 0, px, py, raio);
-        gradient.addColorStop(0, "#FFFF00");
-        gradient.addColorStop(0.7, "#FFA500");
-        gradient.addColorStop(1, "#FF4500");
+    desenharBola(UAtoPX, raioPX = null) {
+        const px = this.pos.x * UAtoPX;
+        const py = this.pos.y * UAtoPX;
+        const raio = raioPX || this.r;
+
+        // 1º: Anéis (SE houver, desenhamos ATRÁS do planeta)
+        if (this.aparencia.aneis) {
+            this.desenharAneis(px, py, raio);
+        }
+
+        // 2º: Glow externo do planeta
+        if (this.aparencia.brilho && this.aparencia.brilho.tamanho > 0) {
+            this.desenharGlowExterno(px, py, raio);
+        }
+
+        // 3º: Planeta em si
+        ctx.beginPath();
+        ctx.arc(px, py, raio, 0, Math.PI * 2);
+        
+        if (this.aparencia.tipo === 'gradiente' && this.aparencia.gradiente) {
+            this.aplicarGradiente(px, py, raio);
+        } else {
+            ctx.fillStyle = this.aparencia.cor || this.cor;
+        }
+        
+        ctx.fill();
+        ctx.closePath();
+
+        // 4º: Brilho interno do planeta
+        if (this.aparencia.brilho && this.aparencia.brilho.intensidade > 0) {
+            this.desenharBrilhoInterno(px, py, raio);
+        }
+    }
+
+    desenharGlowExterno(px, py, raio) {
+        const brilho = this.aparencia.brilho;
+        const gradient = ctx.createRadialGradient(
+            px, py, raio,
+            px, py, raio + brilho.tamanho
+        );
+        gradient.addColorStop(0, brilho.cor);
+        gradient.addColorStop(1, 'transparent');
+        
         ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(px, py, raio + brilho.tamanho, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    desenharBrilhoInterno(px, py, raio) {
+        const brilho = this.aparencia.brilho;
+        ctx.globalAlpha = brilho.intensidade / 100;
+        ctx.fillStyle = brilho.cor;
+        ctx.beginPath();
+        ctx.arc(px, py, raio, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+    }
+
+    aplicarGradiente(px, py, raio) {
+        const gradiente = ctx.createRadialGradient(
+            px, py, 0,
+            px, py, raio
+        );
+        this.aparencia.gradiente.cores.forEach((corInfo, index) => {
+            const stop = index / (this.aparencia.gradiente.cores.length - 1);
+            gradiente.addColorStop(stop, corInfo.cor);
+        });
+        ctx.fillStyle = gradiente;
+    }
+
+    desenharAneis(px, py, raio) {
+    if (!this.aparencia.aneis) return;
+    
+    const aneis = this.aparencia.aneis;
+    
+    ctx.save();
+    ctx.translate(px, py);
+    
+    // Apenas inclinação fixa, SEM rotação
+    ctx.rotate(aneis.inclinacao || 0.5);
+    
+    const largura = aneis.largura || 15;
+    const altura = raio * (aneis.alturaRelativa || 0.2);
+    
+    // Cria um padrão de listras com gradiente linear
+    const gradient = ctx.createLinearGradient(
+        -raio - largura, 0,
+        raio + largura, 0
+    );
+    
+    // Adiciona múltiplas faixas de cores para criar o efeito de listras
+    if (aneis.listras) {
+        // Usa as cores definidas para as listras
+        aneis.listras.forEach((listra, index) => {
+            const posicao = index / aneis.listras.length;
+            gradient.addColorStop(posicao, listra.cor);
+        });
     } else {
-        ctx.fillStyle = this.cor;
+        // Fallback: padrão de listras claro/escuro
+        gradient.addColorStop(0, 'rgba(245, 222, 179, 0.9)');
+        gradient.addColorStop(0.2, 'rgba(210, 180, 140, 0.7)');
+        gradient.addColorStop(0.4, 'rgba(245, 222, 179, 0.8)');
+        gradient.addColorStop(0.6, 'rgba(210, 180, 140, 0.6)');
+        gradient.addColorStop(0.8, 'rgba(245, 222, 179, 0.7)');
+        gradient.addColorStop(1, 'rgba(210, 180, 140, 0.5)');
     }
     
+    ctx.fillStyle = gradient;
+    ctx.globalAlpha = aneis.opacidade || 0.7;
+    
+    // Desenha o anel como uma elipse
     ctx.beginPath();
-    ctx.arc(px, py, raio, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, raio + largura, altura, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.closePath();
+    
+    ctx.restore();
 }
     desenharRastro(UAtoPX) {
-    this.trail.push({x: this.pos.x, y: this.pos.y});
-    if (this.trail.length > 200) this.trail.shift(); // Controla comprimento
+        this.trail.push({x: this.pos.x, y: this.pos.y});
+        if (this.trail.length > 200) this.trail.shift();
 
-    if (this.trail.length > 1) {
-        ctx.beginPath();
-        ctx.moveTo(this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX);
-        
-        // Gradiente para o rastro
-        const gradient = ctx.createLinearGradient(
-            this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX,
-            this.trail[this.trail.length-1].x * UAtoPX, this.trail[this.trail.length-1].y * UAtoPX
-        );
-        gradient.addColorStop(0, "rgba(255,255,255,0.8)");
-        gradient.addColorStop(1, "rgba(255,255,255,0.1)");
-        
-        ctx.strokeStyle = gradient;
-        ctx.lineWidth = 1.5;
-        
-        for (let i = 1; i < this.trail.length; i++) {
-            ctx.lineTo(this.trail[i].x * UAtoPX, this.trail[i].y * UAtoPX);
+        if (this.trail.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX);
+            
+            // Gradiente para o rastro
+            const gradient = ctx.createLinearGradient(
+                this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX,
+                this.trail[this.trail.length-1].x * UAtoPX, this.trail[this.trail.length-1].y * UAtoPX
+            );
+            gradient.addColorStop(0, "rgba(255,255,255,0.8)");
+            gradient.addColorStop(1, "rgba(255,255,255,0.1)");
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1.5;
+            
+            for (let i = 1; i < this.trail.length; i++) {
+                ctx.lineTo(this.trail[i].x * UAtoPX, this.trail[i].y * UAtoPX);
+            }
+            ctx.stroke();
         }
-        ctx.stroke();
     }
 }
-};
 
 export function acceleration(ball, balls, G){ 
     let acc = new Vector(0,0); 
