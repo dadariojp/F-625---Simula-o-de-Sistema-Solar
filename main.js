@@ -1,5 +1,5 @@
 import { BALLZ, Ball, Vector, energiaMecanica,calcularExcentricidade,  convertVelocityUAYearToPixelsSec,
-    acceleration,accrk2mid, attaRK4, Camera, applyCameraTransform, scale, offsetX, offsetY, brilho,
+    acceleration,accrk2mid, attaRK4, Camera, applyCameraTransform, brilho,
     setOffset, setScale, getOffset, getScale
 
 } from "./funcoes.js";
@@ -11,13 +11,14 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 let tempo = 0
+let scale = 0.3;
 // 1 UA = 200 pixels
-const UA_TO_PIXELS = 500;
+const UA_TO_PIXELS = 7000;
 const G = 39.48;
 //const dt = 0.0009;
 const dt = 0.00019;
 // Sistema solar centralizado
-const sol = new Ball(2, 1, 20, 1);
+const sol = new Ball(2, 1, 400, 1);
 sol.vel = new Vector(0,0);
 sol.aparencia.gradiente = {
     cores: [
@@ -33,7 +34,7 @@ sol.aparencia.brilho = {
     tamanho: 30
 };
 
-const terra = new Ball(2+1, 1, 6, 3e-6);
+const terra = new Ball(2+1, 1, 20, 3e-6);
 terra.cor = "blue";
 let vterra = convertVelocityUAYearToPixelsSec(6.28, UA_TO_PIXELS);
 console.log("vterra", vterra);
@@ -49,7 +50,7 @@ terra.aparencia.gradiente = {
 };
 
 
-const lua = new Ball(2+1 + 0.0026, 1, 0.5, 3.7e-8);
+const lua = new Ball(2+1 + 0.0026, 1, 0.5, 20.7e-8);
 let vlua = convertVelocityUAYearToPixelsSec(0.21, UA_TO_PIXELS);
 lua.vel = new Vector(0, 6.28 + 0.21);
 lua.aparencia.tipo = 'gradiente';
@@ -63,7 +64,7 @@ lua.aparencia.gradiente = {
 };
 
 
-let mercurio = new Ball(2+ 0.39, 1, 3, 1e-7);
+let mercurio = new Ball(2+ 0.39, 1, 10, 1e-7);
 mercurio.vel = new Vector(0, 10.21);
 mercurio.aparencia.tipo = 'gradiente';
 mercurio.aparencia.gradiente = {
@@ -75,7 +76,7 @@ mercurio.aparencia.gradiente = {
     ]
 };
 
-let venus = new Ball(2 + 0.72, 1, 6, 2.45e-6);
+let venus = new Ball(2 + 0.72, 1, 20, 2.45e-6);
 venus.vel = new Vector(0, 7.29);
 venus.aparencia.tipo = 'gradiente';
 venus.aparencia.gradiente = {
@@ -88,7 +89,7 @@ venus.aparencia.gradiente = {
 };
 
 
-let marte = new Ball(2 + 1.52, 1, 4, 3.23e-7);
+let marte = new Ball(2 + 1.52, 1, 20, 3.23e-7);
 marte.vel = new Vector(0, 5.08);
 marte.aparencia.tipo = 'gradiente';
 marte.aparencia.gradiente = {
@@ -100,7 +101,7 @@ marte.aparencia.gradiente = {
     ]
 };
 
-let jupter = new Ball(2 + 5.2, 1, 12, 9.55e-4);
+let jupter = new Ball(2 + 5.2, 1, 30, 9.55e-4);
 jupter.vel = new Vector(0, 2.75);
 jupter.aparencia.tipo = 'gradiente';
 jupter.aparencia.gradiente = {
@@ -113,7 +114,7 @@ jupter.aparencia.gradiente = {
 };
 
 
-let saturno = new Ball(2 + 9.58, 1, 11, 2.86e-4);
+let saturno = new Ball(2 + 9.58, 1, 30, 2.86e-4);
 saturno.vel = new Vector(0, 2.03);
 saturno.aparencia.tipo = 'gradiente';
 saturno.aparencia.gradiente = {
@@ -148,7 +149,7 @@ saturno.aparencia.brilho = {
 };
 
 
-let urano = new Ball(2 + 19.2, 1, 8, 4.37e-5);
+let urano = new Ball(2 + 19.2, 1, 20, 4.37e-5);
 urano.vel = new Vector(0, 1.44);
 urano.aparencia.tipo = 'gradiente';
 urano.aparencia.gradiente = {
@@ -161,7 +162,7 @@ urano.aparencia.gradiente = {
 };
 
 
-let netuno = new Ball(2 + 30, 1, 8, 5.15e-5);
+let netuno = new Ball(2 + 30, 1, 70, 5.15e-5);
 netuno.vel = new Vector(0,  1.15);
 netuno.aparencia.tipo = 'gradiente';
 netuno.aparencia.gradiente = {
@@ -227,25 +228,113 @@ function desenharInterface() {
     ctx.fillText(`Rastros: ${showTrails ? "LIGADOS" : "DESLIGADOS"}`, 20, 105);
 }
 
-const atualizarCamera = Camera(canvas);
+const atualizarCamera = Camera(canvas, UA_TO_PIXELS);
+
+
+// Criar painel de informações
+const painel = document.createElement("div");
+painel.id = "painel-info";
+painel.style.position = "absolute";
+painel.style.top = "10px";
+painel.style.left = "10px";
+painel.style.background = "rgba(0, 0, 0, 0.85)";
+painel.style.color = "white";
+painel.style.padding = "15px";
+painel.style.borderRadius = "10px";
+painel.style.fontFamily = "Arial, sans-serif";
+painel.style.fontSize = "14px";
+painel.style.width = "320px";
+painel.style.boxShadow = "0 0 25px rgba(0, 0, 0, 0.6)";
+painel.style.zIndex = "1000";
+painel.style.backdropFilter = "blur(5px)";
+painel.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+document.body.appendChild(painel);
+
+// Função para atualizar o painel
+function atualizarPainel() {
+    const energiamecanica = energiaMecanica(BALLZ, G);
+    const eterra = calcularExcentricidade(terra, sol, G);
+    
+    painel.innerHTML = `
+        <h3 style="margin-top:0; color: #64B5F6; border-bottom: 1px solid #444; padding-bottom: 8px;">🌌 Sistema Solar</h3>
+        <p><b>⭐ Energia mecânica:</b> ${energiamecanica.toExponential(3)} J</p>
+        <p><b>⏱️ Tempo decorrido:</b> ${tempo.toFixed(2)} anos</p>
+        <p><b>🔄 Excentricidade Terra:</b> ${eterra.toFixed(4)}</p>
+        <p><b>🔍 Zoom:</b> ${scale.toFixed(2)}x</p>
+        <p><b>🪐 Planetas:</b> ${BALLZ.length}</p>
+        <p><b>📏 Rastros:</b> ${showTrails ? "Ligados" : "Desligados"}</p>
+        <hr style="border-color:#444; margin: 12px 0;">
+        <p style="font-size:12px; color:#aaa; margin-bottom:0;">
+            🖱️ Clique nos planetas para focar<br>
+            🎲 Scroll para zoom<br>
+            Arraste para mover
+        </p>
+    `;
+}
+
+
+
+function focarNoPlaneta(nomePlaneta) {
+    let planeta;
+    
+    switch(nomePlaneta) {
+        case 'sol': planeta = sol; break;
+        case 'mercurio': planeta = mercurio; break;
+        case 'venus': planeta = venus; break;
+        case 'terra': planeta = terra; break;
+        case 'lua': planeta = lua; break;
+        case 'marte': planeta = marte; break;
+        case 'jupter': planeta = jupter; break;
+        case 'saturno': planeta = saturno; break;
+        case 'urano': planeta = urano; break;
+        case 'netuno': planeta = netuno; break;
+    }
+    
+    if (planeta) {
+        window.planetaSeguido = planeta;
+        console.log(`Seguindo: ${nomePlaneta}`);
+    }
+}
+
+// Função resetarCamera
+function resetarCamera() {
+    window.planetaSeguido = null;
+    scale = 0.3;
+    offsetX = canvas.width / 2 - sol.pos.x * UA_TO_PIXELS * scale;
+    offsetY = canvas.height / 2 - sol.pos.y * UA_TO_PIXELS * scale;
+    
+    // Resetar seleção visual dos botões
+    document.querySelectorAll('.btn-planeta').forEach(b => {
+        b.style.background = "rgba(50, 50, 50, 0.7)";
+        b.style.borderColor = "rgba(100, 100, 100, 0.5)";
+    });
+    
+    console.log("Câmera resetada para o Sol");
+}
+
+
+
 
 function loop() {
+
+    console.log("Planetas na tela:", BALLZ.length);
+for(let b of BALLZ) {
+    console.log(`- ${b === sol ? 'Sol' : 'Planeta'}: (${b.pos.x}, ${b.pos.y})`);
+}
     // Limpa o canvas
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Atualiza a câmera (segue o planeta focado se houver)
+    // Atualiza a câmera (IMPORTANTE: deve ser chamado antes de applyCameraTransform)
     atualizarCamera();
 
-    // 1️⃣ DESENHA AS ESTRELAS PRIMEIRO (sem transformação de câmera)
-    desenharEstrelas();
-
-    // 2️⃣ APLICA A TRANSFORMAÇÃO DA CÂMERA
+    // Aplica a transformação da câmera
     applyCameraTransform(ctx);
 
-    // 3️⃣ ATUALIZA E DESENHA OS PLANETAS (com transformação de câmera)
+    // Atualiza a física
     attaRK4(dt, BALLZ, G);
 
+    // Desenha os planetas
     for(let b of BALLZ) {
         b.desenharBola(UA_TO_PIXELS);
         if (showTrails) {
@@ -253,17 +342,18 @@ function loop() {
         }
     }
 
+    // Remove a transformação da câmera
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    desenharInterface();
+
+    // Desenha as estrelas
+    desenharEstrelas();
+
+    // Atualiza o painel de informações
+    atualizarPainel();
+
+    // Incrementa o tempo
+    tempo += dt;
     
     requestAnimationFrame(loop);
 }
-
 loop();
-
-// Função para resetar a câmera no Sol
-function resetarCamera() {
-    scale = 0.3;
-    offsetX = canvas.width / 2 - sol.pos.x * UA_TO_PIXELS * scale;
-    offsetY = canvas.height / 2 - sol.pos.y * UA_TO_PIXELS * scale;
-};

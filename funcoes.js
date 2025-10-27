@@ -2,18 +2,13 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-const UA_TO_PIXELS = 500;
 
 const zoomFactor = 1.1; //NUNCA COLOCAR 1, qualquer outro numero funciona
 
 window.offsetX = 0;
 window.offsetY = 0;
 export let brilho = 0;
-
-export let offsetX = 0;
-export let offsetY = 0;
-export let scale = 1;
-
+let scale = 0.3;
 export function setOffset(x, y) {
     offsetX = x;
     offsetY = y;
@@ -28,11 +23,10 @@ export function getScale() {
     return scale;
 }
 
-
-export function Camera(canvas) {
+export function Camera(canvas, UA_TO_PIXELS) { // Adicione UA_TO_PIXELS como parâmetro
     let isDragging = false;
     let startX, startY;
-    let planetaFocado = null; // Variável para armazenar o planeta focado
+    window.planetaSeguido = null;
 
     // Configuração inicial
     scale = 0.3;
@@ -41,7 +35,7 @@ export function Camera(canvas) {
 
     // Evento de clique para focar nos planetas
     canvas.addEventListener('click', (e) => {
-        if (isDragging) return; // Não focar se estiver arrastando
+        if (isDragging) return;
         
         const rect = canvas.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
@@ -63,9 +57,8 @@ export function Camera(canvas) {
             const margemClique = Math.max(planeta.r * 2, 15);
             
             if (distancia <= margemClique) {
-                // Define o planeta focado
-                planetaFocado = planeta;
-                console.log(`Focado em: ${planeta === sol ? 'Sol' : 'Planeta'}`);
+                window.planetaSeguido = planeta;
+                console.log(`Seguindo: ${planeta === sol ? 'Sol' : 'Planeta'}`);
                 break;
             }
         }
@@ -76,14 +69,13 @@ export function Camera(canvas) {
         isDragging = true;
         startX = e.clientX - offsetX;
         startY = e.clientY - offsetY;
-        planetaFocado = null; // Para de seguir quando o usuário arrasta
+        window.planetaSeguido = null;
     });
 
     window.addEventListener('mousemove', (e) => {
         if (isDragging) {
             offsetX = e.clientX - startX;
             offsetY = e.clientY - startY;
-            planetaFocado = null; // Para de seguir quando o usuário arrasta
         }
     });
 
@@ -93,7 +85,7 @@ export function Camera(canvas) {
     
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
-        planetaFocado = null; // Para de seguir quando o usuário faz zoom
+        window.planetaSeguido = null;
 
         const rect = canvas.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - offsetX) / scale;
@@ -106,20 +98,18 @@ export function Camera(canvas) {
         offsetY = e.clientY - rect.top - mouseY * scale;
     });
 
-    // Função para atualizar a câmera para seguir o planeta focado
+    // Função para atualizar a câmera
     function atualizarCamera() {
-        if (planetaFocado) {
-            const px = planetaFocado.pos.x * UA_TO_PIXELS;
-            const py = planetaFocado.pos.y * UA_TO_PIXELS;
+        if (window.planetaSeguido && !isDragging) {
+            const px = window.planetaSeguido.pos.x * UA_TO_PIXELS;
+            const py = window.planetaSeguido.pos.y * UA_TO_PIXELS;
             offsetX = canvas.width / 2 - px * scale;
             offsetY = canvas.height / 2 - py * scale;
         }
     }
 
-    // Retorna a função de atualização para ser chamada no loop
     return atualizarCamera;
 }
-
 export function applyCameraTransform(ctx) {
     console.log("Camera transform:", scale, offsetX, offsetY);
     ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
