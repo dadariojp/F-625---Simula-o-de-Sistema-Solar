@@ -282,17 +282,15 @@ export class Ball{
         }
     }
     desenharRastro(UAtoPX) {
-     if (this.period === null) {
+    if (this.period === null) {
         // Ainda não completou uma órbita, continua acumulando
         this.trail.push({x: this.pos.x, y: this.pos.y});
     } else {
         // Já completou uma órbita, mantém apenas pontos equivalentes a 1 período
         const pontosPorPeriodo = Math.min(this.trail.length, 8000);
         this.trail = this.trail.slice(-pontosPorPeriodo);
-        
-        // ⚠️ IMPORTANTE: Para de adicionar novos pontos após período detectado
-        // this.trail.push({x: this.pos.x, y: this.pos.y}); // REMOVER esta linha
     }
+    
     if (this.trail.length > 1) {
         ctx.beginPath();
         ctx.moveTo(this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX);
@@ -301,7 +299,10 @@ export class Ball{
         }
         ctx.setLineDash([5, 5]);
         ctx.strokeStyle = "white";
-        ctx.lineWidth = 10;
+        
+        //width proporcional ao zoom (scale)
+        ctx.lineWidth = Math.max(0.5, 2 / scale); // Mínimo de 0.5, máximo relativo ao zoom
+        
         ctx.stroke();
         ctx.setLineDash([]);
     }
