@@ -38,7 +38,7 @@ venus.vel = new Vector(0, 7.29);
 let marte = new Ball(2 + 1.52, 1, 10, 3.23e-7,'Marte',3.9,2,208,'planeta rochoso');
 marte.vel = new Vector(0, 5.08);
 
-let jupter = new Ball(2 + 5.2, 1, 10, 9.55e-4,'Júpter',1.3,95,165,'planeta gasoso');
+let jupter = new Ball(2 + 5.2, 1, 10, 9.55e-4,'Júpiter',1.3,95,165,'planeta gasoso');
 jupter.vel = new Vector(0, 2.75);
 
 let saturno = new Ball(2 + 9.58, 1, 10, 2.86e-4,'Saturno',0.69,146,134,'planeta gasoso');
@@ -114,7 +114,7 @@ function desenharInterface() {
 const atualizarCamera = Camera(canvas, UA_TO_PIXELS);
 
 
-// Criar painel de informações
+// === PAINEL FIXO - CRIADO UMA VEZ ===
 const painel = document.createElement("div");
 painel.id = "painel-info";
 painel.style.position = "absolute";
@@ -131,25 +131,69 @@ painel.style.boxShadow = "0 0 25px rgba(0, 0, 0, 0.6)";
 painel.style.zIndex = "1000";
 painel.style.backdropFilter = "blur(5px)";
 painel.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+
+// HTML INICIAL do painel (sem dados dinâmicos ainda)
+painel.innerHTML = `
+    <h3 style="margin-top:0; color: #64B5F6; border-bottom: 1px solid #444; padding-bottom: 8px;">🌌 Sistema Solar</h3>
+    
+    <!-- Seletor de Planetas -->
+    <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #aaa;">
+            🎯 Focar Planeta:
+        </label>
+        <select id="seletorPlanetas" 
+                style="width: 100%; padding: 8px; background: rgba(30,30,40,0.9); 
+                       color: white; border: 1px solid #444; border-radius: 5px;
+                       font-size: 12px;">
+            <option value="">-- Visão Geral --</option>
+            <option value="sol">☀️ Sol</option>
+            <option value="mercurio">🪐 Mercúrio</option>
+            <option value="venus">🪐 Vênus</option>
+            <option value="terra">🪐 Terra</option>
+            <option value="marte">🪐 Marte</option>
+            <option value="jupter">🪐 Júpiter</option>
+            <option value="saturno">🪐 Saturno</option>
+            <option value="urano">🪐 Urano</option>
+            <option value="netuno">🪐 Netuno</option>
+        </select>
+    </div>
+
+    <p><b>⭐ Energia mecânica:</b> <span id="info-energia">0</span></p>
+    <p><b>⏱️ Tempo decorrido:</b> <span id="info-tempo">0</span> anos</p>
+    <p><b>🔄 Excentricidade Terra:</b> <span id="info-excentricidade">0</span></p>
+    <p><b>🔍 Zoom:</b> <span id="info-zoom">0</span>x</p>
+    <p><b>🪐 Planetas:</b> <span id="info-num-planetas">0</span></p>
+    <p><b>📏 Rastros:</b> <span id="info-rastros">Ligados</span></p>
+    <hr style="border-color:#444; margin: 12px 0;">
+    <p style="font-size:12px; color:#aaa; margin-bottom:0;">
+        🖱️ Clique nos planetas para focar<br>
+        🎲 Scroll para zoom<br>
+        Arraste para mover
+    </p>
+`;
+
 document.body.appendChild(painel);
+
+// Event listener do seletor (APENAS UMA VEZ)
+document.getElementById("seletorPlanetas").addEventListener("change", function() {
+    const planetaNome = this.value;
+    focarPlaneta(planetaNome);
+});
+// === FIM DO PAINEL FIXO ===
+
+
 
 function atualizarPainel() {
     const energiamecanica = energiaMecanica(BALLZ, G);
     const eterra = calcularExcentricidade(terra, sol, G);
     
-    painel.innerHTML = `
-        <h3 style="margin-top:0; color: #64B5F6; border-bottom: 1px solid #444; padding-bottom: 8px;">🌌 Sistema Solar</h3>
-        <p><b>⭐ Energia mecânica:</b> ${energiamecanica.toExponential(3)} J</p>
-        <p><b>⏱️ Tempo decorrido:</b> ${tempo.toFixed(2)} anos</p>
-        <p><b>🔄 Excentricidade Terra:</b> ${eterra.toFixed(4)}</p>
-        <p><b>🔍 Zoom:</b> ${scale.toFixed(2)}x</p>
-        <hr style="border-color:#444; margin: 12px 0;">
-        <p style="font-size:12px; color:#aaa; margin-bottom:0;">
-            🖱️ Clique nos planetas para focar<br>
-            🎲 Scroll para zoom<br>
-            Arraste para mover
-        </p>
-    `;
+    // Apenas atualiza os valores, não recria o HTML
+    document.getElementById("info-energia").textContent = energiamecanica.toExponential(3);
+    document.getElementById("info-tempo").textContent = tempo.toFixed(2);
+    document.getElementById("info-excentricidade").textContent = eterra.toFixed(4);
+    document.getElementById("info-zoom").textContent = scale.toFixed(2);
+    document.getElementById("info-num-planetas").textContent = BALLZ.length;
+    document.getElementById("info-rastros").textContent = showTrails ? "Ligados" : "Desligados";
 }
 
 
@@ -169,6 +213,33 @@ function resetarCamera() {
     console.log("Câmera resetada para o Sol");
 }
 
+
+function focarPlaneta(nomePlaneta) {
+    let planeta;
+    
+    switch(nomePlaneta) {
+        case 'sol': planeta = sol; break;
+        case 'mercurio': planeta = mercurio; break;
+        case 'venus': planeta = venus; break;
+        case 'terra': planeta = terra; break;
+        case 'marte': planeta = marte; break;
+        case 'jupter': planeta = jupter; break;
+        case 'saturno': planeta = saturno; break;
+        case 'urano': planeta = urano; break;
+        case 'netuno': planeta = netuno; break;
+        default: 
+            window.planetaSeguido = null;
+            window.planetaSelecionado = null;
+            console.log("🏁 Visão geral ativada");
+            return;
+    }
+    
+    if (planeta) {
+        window.planetaSeguido = planeta;
+        window.planetaSelecionado = planeta;
+        console.log(`🎯 Focando em: ${planeta.name}`);
+    }
+}
 
 let showTrails = true;
 
