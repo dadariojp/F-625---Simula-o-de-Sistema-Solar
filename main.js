@@ -5,6 +5,9 @@ import { BALLZ, Ball, Vector, energiaMecanica, calcularExcentricidade,  convertV
 } from "./funcoes.js";
 
 let planetaFocado = null;
+let paused = false;
+let animationId = null;
+let speedMultiplier = 1;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -241,46 +244,109 @@ function focarPlaneta(nomePlaneta) {
     }
 }
 
+// Botão de Pausa
+const pauseButton = document.createElement("button");
+pauseButton.innerHTML = "⏸️ Pausar";
+pauseButton.style.position = "absolute";
+pauseButton.style.bottom = "20px";
+pauseButton.style.left = "20px";
+pauseButton.style.background = "rgba(0, 0, 0, 0.8)";
+pauseButton.style.color = "white";
+pauseButton.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+pauseButton.style.borderRadius = "5px";
+pauseButton.style.padding = "10px 15px";
+pauseButton.style.fontSize = "14px";
+pauseButton.style.cursor = "pointer";
+pauseButton.style.zIndex = "1000";
+document.body.appendChild(pauseButton);
+
+// Evento do botão de pausa
+pauseButton.addEventListener("click", () => {
+    paused = !paused;
+    if (paused) {
+        pauseButton.innerHTML = "▶️ Retomar";
+        console.log("Simulação pausada");
+    } else {
+        pauseButton.innerHTML = "⏸️ Pausar";
+        console.log("Simulação retomada");
+    }
+});
+
+// Slider de Velocidade
+const speedContainer = document.createElement("div");
+speedContainer.style.position = "absolute";
+speedContainer.style.bottom = "70px"; // Acima do botão de pausa
+speedContainer.style.left = "20px";
+speedContainer.style.background = "rgba(0, 0, 0, 0.8)";
+speedContainer.style.color = "white";
+speedContainer.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+speedContainer.style.borderRadius = "5px";
+speedContainer.style.padding = "10px 15px";
+speedContainer.style.fontSize = "14px";
+speedContainer.style.zIndex = "1000";
+speedContainer.style.minWidth = "200px";
+
+speedContainer.innerHTML = `
+    <div style="margin-bottom: 5px;">🚀 Velocidade: <span id="speedValue">1x</span></div>
+    <input type="range" id="speedSlider" min="1" max="100" step="0.1" value="1" 
+           style="width: 100%; cursor: pointer;">
+    <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 2px;">
+        <span>1x</span>
+        <span>5x</span>
+        <span>10x</span>
+    </div>
+`;
+
+document.body.appendChild(speedContainer);
+
+// Evento do slider de velocidade
+const speedSlider = document.getElementById("speedSlider");
+const speedValue = document.getElementById("speedValue");
+
+speedSlider.addEventListener("input", function() {
+    speedMultiplier = parseFloat(this.value);
+    speedValue.textContent = speedMultiplier.toFixed(1) + "x";
+    console.log(`Velocidade: ${speedMultiplier.toFixed(1)}x`);
+});
+
 let showTrails = true;
 
 function loop() {
-    // Limpa o canvas
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!paused) {
+        // Limpa o canvas
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Atualiza a câmera (IMPORTANTE: deve ser chamado antes de applyCameraTransform)
-    atualizarCamera();
+        // Atualiza a câmera
+        atualizarCamera();
 
+        // Aplica a transformação da câmera
+        applyCameraTransform(ctx);
 
-    // Aplica a transformação da câmera
-    applyCameraTransform(ctx);
+        // Atualiza a física COM MULTIPLICADOR DE VELOCIDADE
+        attaRK4(dt * speedMultiplier, BALLZ, G);
 
-    // Atualiza a física
-    attaRK4(dt, BALLZ, G);
+        // Desenha os planetas
+        for(let b of BALLZ) {
+            b.desenharBola(UA_TO_PIXELS, 4);
+            b.desenharRastro(UA_TO_PIXELS);
+            b.desenharPainel();
+            medirPeriodo(b, sol, tempo);
+        }
 
-    // Desenha os planetas
-    for(let b of BALLZ) {
-        // Usando raio fixo de 4 pixels para melhor visualização
-        b.desenharBola(UA_TO_PIXELS, 4);
-        b.desenharRastro(UA_TO_PIXELS);
-        b.desenharPainel();
-        medirPeriodo(b, sol, tempo);
+        // Remove a transformação da câmera
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        desenharEstrelas();
+
+        // Atualiza os painéis
+        atualizarPainel();
+        atualizarPainelPlaneta();
+
+        // Incrementa o tempo COM MULTIPLICADOR DE VELOCIDADE
+        tempo += dt * speedMultiplier;
     }
     
-
-    // Remove a transformação da câmera
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-    desenharEstrelas();
-
-    // Atualiza o painel de informações
-    atualizarPainel();
-
-    atualizarPainelPlaneta();
-
-    // Incrementa o tempo
-    tempo += dt;
-
-    requestAnimationFrame(loop);
+    animationId = requestAnimationFrame(loop);
 }
 loop();
