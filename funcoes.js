@@ -3,14 +3,52 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+
+
 const painelPlaneta = document.createElement("div");
 painelPlaneta.id = "painelPlaneta";
 // (usar mesmo estilo do painel do main.js, mas position: absolute; top: 20px; right: 20px;)
 painelPlaneta.style.display = "none";
+painelPlaneta.id = "painelPlaneta";
+painelPlaneta.style.position = "absolute";
+painelPlaneta.style.top = "20px";
+painelPlaneta.style.right = "20px";
+painelPlaneta.style.background = "rgba(0, 0, 0, 0.95)";
+painelPlaneta.style.color = "white";
+painelPlaneta.style.padding = "15px";
+painelPlaneta.style.borderRadius = "10px";
+painelPlaneta.style.fontFamily = "Arial, sans-serif";
+painelPlaneta.style.fontSize = "14px";
+painelPlaneta.style.width = "300px";
+painelPlaneta.style.boxShadow = "0 0 20px rgba(0, 0, 0, 0.8)";
+painelPlaneta.style.zIndex = "10000";
+painelPlaneta.style.border = "2px solid rgba(255, 255, 255, 0.3)";
+painelPlaneta.style.display = "none";
+painelPlaneta.style.backdropFilter = "blur(5px)";
+painelPlaneta.style.opacity = "1";
+painelPlaneta.style.visibility = "visible";
 document.body.appendChild(painelPlaneta);
 
-const zoomFactor = 1.1; //NUNCA COLOCAR 1, qualquer outro numero funciona
 
+const painel = document.createElement("div");
+painel.id = "painelInfo";
+painel.style.position = "absolute";
+painel.style.top = "20px";
+painel.style.right = "20px";
+painel.style.background = "rgba(0, 0, 0, 0.8)";
+painel.style.color = "white";
+painel.style.padding = "10px";
+painel.style.borderRadius = "8px";
+painel.style.display = "none";
+painel.style.fontFamily = "monospace";
+painel.style.fontSize="14px";
+painel.style.width="260px";
+painel.style.boxshadow="0 0 10px rgba(255, 255, 255, 0.3)";
+document.body.appendChild(painel);
+
+
+
+const zoomFactor = 1.1; //NUNCA COLOCAR 1, qualquer outro numero funciona
 window.offsetX = 0;
 window.offsetY = 0;
 export let brilho = 0;
@@ -33,6 +71,7 @@ export function Camera(canvas, UA_TO_PIXELS) { // Adicione UA_TO_PIXELS como par
     let isDragging = false;
     let startX, startY;
     window.planetaSeguido = null;
+    window.planetaSelecionado = null;
 
     // Configuração inicial
     scale = 0.3;
@@ -64,7 +103,8 @@ export function Camera(canvas, UA_TO_PIXELS) { // Adicione UA_TO_PIXELS como par
             
             if (distancia <= margemClique) {
                 window.planetaSeguido = planeta;
-                console.log(`Seguindo: ${planeta === sol ? 'Sol' : 'Planeta'}`);
+                window.planetaSelecionado = planeta;
+                console.log(`Seguindo: ${planeta.name}`);
                 break;
             }
         }
@@ -119,7 +159,6 @@ export function Camera(canvas, UA_TO_PIXELS) { // Adicione UA_TO_PIXELS como par
 
 
 export function applyCameraTransform(ctx) {
-    console.log("Camera transform:", scale, offsetX, offsetY);
     ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 }
 
@@ -437,23 +476,6 @@ export function attaRK4(dt, balls, G) {
     }
 }
 
-
-const painel = document.createElement("div");
-painel.id = "painelInfo";
-painel.style.position = "absolute";
-painel.style.top = "20px";
-painel.style.right = "20px";
-painel.style.background = "rgba(0, 0, 0, 0.8)";
-painel.style.color = "white";
-painel.style.padding = "10px";
-painel.style.borderRadius = "8px";
-painel.style.display = "none";
-painel.style.fontFamily = "monospace";
-painel.style.fontSize="14px";
-painel.style.width="260px";
-painel.style.boxshadow="0 0 10px rgba(255, 255, 255, 0.3)";
-document.body.appendChild(painel);
-
 // === Função para detectar clique em um planeta ===
 function planetaClicado(x, y, UAtoPX) {
   for (const p of BALLZ) {
@@ -477,12 +499,15 @@ function planetaClicado(x, y, UAtoPX) {
 
 // === Função para mostrar informações ===
 export function atualizarPainelPlaneta() {
+
     if (!window.planetaSelecionado) {
         painelPlaneta.style.display = "none";
         return;
     }
     
     const p = window.planetaSelecionado;
+
+    
     painelPlaneta.style.display = "block";
     painelPlaneta.innerHTML = `
         <h3>${p.name}</h3>
