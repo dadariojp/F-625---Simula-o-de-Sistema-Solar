@@ -131,7 +131,6 @@ export function Camera(canvas, UA_TO_PIXELS) { // Adicione UA_TO_PIXELS como par
     
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
-        window.planetaSeguido = null;
 
         const rect = canvas.getBoundingClientRect();
         const mouseX = (e.clientX - rect.left - offsetX) / scale;
