@@ -302,7 +302,7 @@ export class Ball{
         }
         ctx.setLineDash([5, 5]);
         ctx.strokeStyle = "white";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 10;
         ctx.stroke();
         ctx.setLineDash([]);
     }
