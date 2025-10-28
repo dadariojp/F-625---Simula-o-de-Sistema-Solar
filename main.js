@@ -1,6 +1,6 @@
 import { BALLZ, Ball, Vector, energiaMecanica, calcularExcentricidade,  convertVelocityUAYearToPixelsSec,
     acceleration,accrk2mid, attaRK4, Camera, applyCameraTransform, brilho,
-    setOffset, setScale, getOffset, getScale, atualizarPainelPlaneta
+    setOffset, setScale, getOffset, getScale, atualizarPainelPlaneta, medirPeriodo
 
 } from "./funcoes.js";
 
@@ -18,36 +18,36 @@ const G = 39.48;
 //const dt = 0.0009;
 const dt = 0.00019;
 // Sistema solar centralizado
-const sol = new Ball(2, 1, 20, 1,'Sol',1.4,0,5778,'estrela');
+const sol = new Ball(2, 1, 600, 1,'Sol',1.4,0,5778,'estrela');
 sol.vel = new Vector(0,0);
 
-const terra = new Ball(2+1, 1, 15, 3e-6, 'Terra',5.5,1,288,'planeta rochoso');
+const terra = new Ball(2+1, 1, 50, 3e-6, 'Terra',5.5,1,288,'planeta rochoso');
 let vterra = convertVelocityUAYearToPixelsSec(6.28, UA_TO_PIXELS);
 terra.vel = new Vector(0, 6.28);
 
-const lua = new Ball(2+1 + 0.0026, 1, 3, 3.7e-8,'Lua',3.3,0,220,'satélite');
+const lua = new Ball(2+1 + 0.0026, 10, 3, 3.7e-8,'Lua',3.3,0,220,'satélite');
 let vlua = convertVelocityUAYearToPixelsSec(0.21, UA_TO_PIXELS);
 lua.vel = new Vector(0, 6.28 + 0.21);
 
-let mercurio = new Ball(2+ 0.39, 1, 9, 1e-7,'Mercúrio',5.4,0,452,'planeta rochoso');
+let mercurio = new Ball(2+ 0.39, 1, 30, 1e-7,'Mercúrio',5.4,0,452,'planeta rochoso');
 mercurio.vel = new Vector(0, 10.21);
 
-let venus = new Ball(2 + 0.72, 1, 9, 2.45e-6,'Vênus',5.2,0,737,'planeta rochoso');
+let venus = new Ball(2 + 0.72, 1, 40, 2.45e-6,'Vênus',5.2,0,737,'planeta rochoso');
 venus.vel = new Vector(0, 7.29);
 
-let marte = new Ball(2 + 1.52, 1, 10, 3.23e-7,'Marte',3.9,2,208,'planeta rochoso');
+let marte = new Ball(2 + 1.52, 1, 50, 3.23e-7,'Marte',3.9,2,208,'planeta rochoso');
 marte.vel = new Vector(0, 5.08);
 
-let jupter = new Ball(2 + 5.2, 1, 10, 9.55e-4,'Júpiter',1.3,95,165,'planeta gasoso');
+let jupter = new Ball(2 + 5.2, 1, 300, 9.55e-4,'Júpiter',1.3,95,165,'planeta gasoso');
 jupter.vel = new Vector(0, 2.75);
 
-let saturno = new Ball(2 + 9.58, 1, 10, 2.86e-4,'Saturno',0.69,146,134,'planeta gasoso');
+let saturno = new Ball(2 + 9.58, 1, 250, 2.86e-4,'Saturno',0.69,146,134,'planeta gasoso');
 saturno.vel = new Vector(0, 2.03);
 
-let urano = new Ball(2 + 19.2, 1, 10, 4.37e-5,'Urano',1.27,28,76, 'planeta gasoso');
+let urano = new Ball(2 + 19.2, 1, 200, 4.37e-5,'Urano',1.27,28,76, 'planeta gasoso');
 urano.vel = new Vector(0, 1.44);
 
-let netuno = new Ball(2 + 30, 1, 10, 5.15e-5,'Netuno',1.64,16,72,'planeta gasoso');
+let netuno = new Ball(2 + 30, 1, 200, 5.15e-5,'Netuno',1.64,16,72,'planeta gasoso');
 netuno.vel = new Vector(0,  1.15);
 
 
@@ -264,6 +264,7 @@ function loop() {
         b.desenharBola(UA_TO_PIXELS, 4);
         b.desenharRastro(UA_TO_PIXELS);
         b.desenharPainel();
+        medirPeriodo(b, sol, tempo);
     }
     
 

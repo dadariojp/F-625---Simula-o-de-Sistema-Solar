@@ -520,3 +520,47 @@ export function atualizarPainelPlaneta() {
         <p><b>Classificação:</b> ${p.tdpl}</p>
     `;
 }
+
+export function medirPeriodo(planeta, sol, tempo) {
+    // Ignora o sol (não orbita nada)
+    if (planeta === sol) return;
+    
+    // vetor relativo Sol -> planeta
+    const dx = planeta.pos.x - sol.pos.x;
+    const dy = planeta.pos.y - sol.pos.y;
+    
+    // ângulo atual (radians)
+    let ang = Math.atan2(dy, dx);
+    
+    // inicialização
+    if (planeta.lastAngle === null) {
+        planeta.lastAngle = ang;
+        planeta.orbitStartTime = tempo;
+        planeta.angleAccumulator = 0;
+        return;
+    }
+    
+    // diferença de ângulo desde a última medida
+    let deltaAng = ang - planeta.lastAngle;
+    
+    // Ajuste para passagem pelo ângulo -π/π
+    if (deltaAng > Math.PI) {
+        deltaAng -= 2 * Math.PI;
+    } else if (deltaAng < -Math.PI) {
+        deltaAng += 2 * Math.PI;
+    }
+    
+    // Acumula a variação do ângulo
+    planeta.angleAccumulator += Math.abs(deltaAng);
+    
+    // Se acumulou uma volta completa (2π), calcula o período
+    if (planeta.angleAccumulator >= 2 * Math.PI) {
+        planeta.period = tempo - planeta.orbitStartTime;
+        planeta.angleAccumulator = 0;
+        planeta.orbitStartTime = tempo;
+        console.log(`📅 Período de ${planeta.name}: ${planeta.period.toFixed(2)} anos`);
+    }
+    
+    // Atualiza o último ângulo
+    planeta.lastAngle = ang;
+}
