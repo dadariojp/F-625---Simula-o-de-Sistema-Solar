@@ -19,7 +19,7 @@ let scale = 0.3;
 const UA_TO_PIXELS = 7000;
 const G = 39.48;
 //const dt = 0.0009;
-const dt = 0.00019;
+const dt = 0.00001;
 // Sistema solar centralizado
 const sol = new Ball(2, 1, 600, 1,'Sol',1.4,0,5778,'estrela');
 sol.vel = new Vector(0,0);
@@ -163,10 +163,6 @@ painel.innerHTML = `
 
     <p><b>⭐ Energia mecânica:</b> <span id="info-energia">0</span></p>
     <p><b>⏱️ Tempo decorrido:</b> <span id="info-tempo">0</span> anos</p>
-    <p><b>🔄 Excentricidade Terra:</b> <span id="info-excentricidade">0</span></p>
-    <p><b>🔍 Zoom:</b> <span id="info-zoom">0</span>x</p>
-    <p><b>🪐 Planetas:</b> <span id="info-num-planetas">0</span></p>
-    <p><b>📏 Rastros:</b> <span id="info-rastros">Ligados</span></p>
     <hr style="border-color:#444; margin: 12px 0;">
     <p style="font-size:12px; color:#aaa; margin-bottom:0;">
         🖱️ Clique nos planetas para focar<br>
@@ -193,10 +189,6 @@ function atualizarPainel() {
     // Apenas atualiza os valores, não recria o HTML
     document.getElementById("info-energia").textContent = energiamecanica.toExponential(3);
     document.getElementById("info-tempo").textContent = tempo.toFixed(2);
-    document.getElementById("info-excentricidade").textContent = eterra.toFixed(4);
-    document.getElementById("info-zoom").textContent = scale.toFixed(2);
-    document.getElementById("info-num-planetas").textContent = BALLZ.length;
-    document.getElementById("info-rastros").textContent = showTrails ? "Ligados" : "Desligados";
 }
 
 
@@ -292,8 +284,8 @@ speedContainer.innerHTML = `
            style="width: 100%; cursor: pointer;">
     <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 2px;">
         <span>1x</span>
-        <span>5x</span>
-        <span>10x</span>
+        <span>50x</span>
+        <span>100x</span>
     </div>
 `;
 
