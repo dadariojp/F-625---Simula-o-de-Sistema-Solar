@@ -3,11 +3,17 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// ===== Configuracoes Globais
+const zoomFactor = 1.1; 
+window.offsetX = 0;
+window.offsetY = 0;
+export let brilho = 0;
+let scale = 0.3;
 
 
+// ===== Elementos do painel Interativo
 const painelPlaneta = document.createElement("div");
 painelPlaneta.id = "painelPlaneta";
-// (usar mesmo estilo do painel do main.js, mas position: absolute; top: 20px; right: 20px;)
 painelPlaneta.style.display = "none";
 painelPlaneta.id = "painelPlaneta";
 painelPlaneta.style.position = "absolute";
@@ -48,11 +54,6 @@ document.body.appendChild(painel);
 
 
 
-const zoomFactor = 1.1; //NUNCA COLOCAR 1, qualquer outro numero funciona
-window.offsetX = 0;
-window.offsetY = 0;
-export let brilho = 0;
-let scale = 0.3;
 export function setOffset(x, y) {
     offsetX = x;
     offsetY = y;
@@ -67,7 +68,9 @@ export function getScale() {
     return scale;
 }
 
-export function Camera(canvas, UA_TO_PIXELS) { // Adicione UA_TO_PIXELS como parâmetro
+
+// ===== Controle de Camera com conversão de Unidades Astronomicas (UA) para pixel
+export function Camera(canvas, UA_TO_PIXELS) { 
     let isDragging = false;
     let startX, startY;
     window.planetaSeguido = null;
@@ -162,6 +165,9 @@ export function applyCameraTransform(ctx) {
 }
 
 
+
+
+// ===== Classes Principais (Vetor, Bola) ===== //
 export  const BALLZ = []
 export class Vector{
     constructor(x,y){
@@ -200,9 +206,9 @@ export class Ball{
         this.cor = "yellow";
         BALLZ.push(this);
         this.trail = [];
-        this.lastAngle = null;         // ângulo do passo anterior
-        this.angleAccumulator = 0;     // soma acumulada de Δθ
-        this.orbitStartTime = null;    // tempo do começo da volta atual
+        this.lastAngle = null;         
+        this.angleAccumulator = 0;     
+        this.orbitStartTime = null;    
         this.period = null;
         this.periododeorbita = 'calculando'
         this.image = new Image();
@@ -309,6 +315,11 @@ export class Ball{
 }
 };
 
+
+
+
+// ===== Fisica e Calculos ===== //
+
 export function acceleration(ball, balls, G){ 
     let acc = new Vector(0,0); 
     for (let b of balls){ 
@@ -401,8 +412,6 @@ export function calcularExcentricidade(planeta, sol, G) {
 
     return e;
 }
-
-
 
 
 

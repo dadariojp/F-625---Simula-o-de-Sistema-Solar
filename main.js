@@ -4,23 +4,30 @@ import { BALLZ, Ball, Vector, energiaMecanica, calcularExcentricidade,  convertV
 
 } from "./funcoes.js";
 
+
+// ===== Inicializacao do Canvas
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+
+// ===== Configuraçōes Globais
+let tempo = 0
+let scale = 0.3;
+const UA_TO_PIXELS = 7000;
+const G = 39.48;
+const dt = 0.00001;
+
+
+// ===== Variaveis de Estado
 let planetaFocado = null;
 let paused = false;
 let animationId = null;
 let speedMultiplier = 1;
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-let tempo = 0
-let scale = 0.3;
-// 1 UA = 200 pixels
-const UA_TO_PIXELS = 7000;
-const G = 39.48;
-//const dt = 0.0009;
-const dt = 0.00001;
-// Sistema solar centralizado
+
+// ===== Sistema Solar
 const sol = new Ball(2, 1, 600, 1,'Sol',1.4,0,5778,'estrela');
 sol.vel = new Vector(0,0);
 
@@ -54,6 +61,7 @@ let netuno = new Ball(2 + 30, 1, 100, 5.15e-5,'Netuno',1.64,16,72,'planeta gasos
 netuno.vel = new Vector(0,  1.15);
 
 
+// ===== Carregar Imagens
 Camera(canvas);
 terra.carregarImagem('imagens/terrapixel.png');
 saturno.carregarImagem('imagens/saturnopixel.png')
@@ -68,11 +76,7 @@ lua.carregarImagem("imagens/luxpixel.png");
 
 
 
-function addTrail() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-
+// ===== Fundo Estrelado
 let stars = []
 export function criarFundoEstrelado() {
     for (let i = 0; i < 500; i++) {
@@ -96,6 +100,8 @@ export function desenharEstrelas() {
 criarFundoEstrelado();
 desenharEstrelas();
 
+
+// ===== Interface do Usuario ===== //
 function desenharInterface() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     
@@ -113,11 +119,8 @@ function desenharInterface() {
     ctx.fillText(`Zoom: ${scale.toFixed(2)}x`, 20, 85);
     ctx.fillText(`Rastros: ${showTrails ? "LIGADOS" : "DESLIGADOS"}`, 20, 105);
 }
-
 const atualizarCamera = Camera(canvas, UA_TO_PIXELS);
 
-
-// === PAINEL FIXO - CRIADO UMA VEZ ===
 const painel = document.createElement("div");
 painel.id = "painel-info";
 painel.style.position = "absolute";
@@ -135,7 +138,7 @@ painel.style.zIndex = "1000";
 painel.style.backdropFilter = "blur(5px)";
 painel.style.border = "1px solid rgba(255, 255, 255, 0.1)";
 
-// HTML INICIAL do painel (sem dados dinâmicos ainda)
+
 painel.innerHTML = `
     <h3 style="margin-top:0; color: #64B5F6; border-bottom: 1px solid #444; padding-bottom: 8px;">🌌 Sistema Solar</h3>
     
@@ -181,7 +184,7 @@ document.getElementById("seletorPlanetas").addEventListener("change", function()
 // === FIM DO PAINEL FIXO ===
 
 
-
+// ===== Funcoes de Controle 
 function atualizarPainel() {
     const energiamecanica = energiaMecanica(BALLZ, G);
     const eterra = calcularExcentricidade(terra, sol, G);
@@ -191,8 +194,6 @@ function atualizarPainel() {
     document.getElementById("info-tempo").textContent = tempo.toFixed(2);
 }
 
-
-// Função resetarCamera
 function resetarCamera() {
     window.planetaSeguido = null;
     scale = 0.3;
@@ -207,7 +208,6 @@ function resetarCamera() {
     
     console.log("Câmera resetada para o Sol");
 }
-
 
 function focarPlaneta(nomePlaneta) {
     let planeta;
@@ -252,7 +252,6 @@ pauseButton.style.cursor = "pointer";
 pauseButton.style.zIndex = "1000";
 document.body.appendChild(pauseButton);
 
-// Evento do botão de pausa
 pauseButton.addEventListener("click", () => {
     paused = !paused;
     if (paused) {
@@ -291,7 +290,6 @@ speedContainer.innerHTML = `
 
 document.body.appendChild(speedContainer);
 
-// Evento do slider de velocidade
 const speedSlider = document.getElementById("speedSlider");
 const speedValue = document.getElementById("speedValue");
 
@@ -300,9 +298,11 @@ speedSlider.addEventListener("input", function() {
     speedValue.textContent = speedMultiplier.toFixed(1) + "x";
     console.log(`Velocidade: ${speedMultiplier.toFixed(1)}x`);
 });
+// === Fim do Painel Interativo ===
 
-let showTrails = true;
 
+
+// ==== LOOP PRINCIPAL ====
 function loop() {
     if (!paused) {
         // Limpa o canvas
