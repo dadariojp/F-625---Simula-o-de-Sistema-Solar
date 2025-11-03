@@ -18,13 +18,14 @@ let scale = 0.3;
 const UA_TO_PIXELS = 7000;
 const G = 39.48;
 const dt = 0.00001;
+let speedMultiplier = 1;
 
 
 // ===== Variaveis de Estado
 let planetaFocado = null;
 let paused = false;
 let animationId = null;
-let speedMultiplier = 1;
+let modoRealista = false;
 
 
 // ===== Sistema Solar
@@ -59,7 +60,6 @@ urano.vel = new Vector(0, 1.44);
 
 let netuno = new Ball(2 + 30, 1, 100, 5.15e-5,'Netuno',1.64,16,72,'planeta gasoso');
 netuno.vel = new Vector(0,  1.15);
-
 
 // ===== Carregar Imagens
 Camera(canvas);
@@ -297,6 +297,93 @@ speedSlider.addEventListener("input", function() {
     console.log(`Velocidade: ${speedMultiplier.toFixed(1)}x`);
 });
 // === Fim do Painel Interativo ===
+
+
+
+// ===== BOTÃO DE TAMANHO REALISTA ===== ///
+const RAIO_REALISTA = {
+    'Sol': 0.00465,           // ~696,340 km em UA
+    'Mercúrio': 0.0000165,    // ~2,440 km em UA
+    'Vênus': 0.0000407,       // ~6,052 km em UA
+    'Terra': 0.0000426,       // ~6,371 km em UA
+    'Lua': 0.0000116,         // ~1,737 km em UA
+    'Marte': 0.0000227,       // ~3,390 km em UA
+    'Júpiter': 0.000467,      // ~69,911 km em UA
+    'Saturno': 0.000389,      // ~58,232 km em UA
+    'Urano': 0.000169,        // ~25,362 km em UA
+    'Netuno': 0.000164        // ~24,622 km em UA
+};
+
+// ===== RAIO VISUAL ATUAL (para poder alternar) =====
+const RAIO_VISUAL = {
+    'Sol': sol.r,
+    'Mercúrio': mercurio.r,
+    'Vênus': venus.r,
+    'Terra': terra.r,
+    'Lua': lua.r,
+    'Marte': marte.r,
+    'Júpiter': jupter.r,
+    'Saturno': saturno.r,
+    'Urano': urano.r,
+    'Netuno': netuno.r
+};
+
+const realistaButton = document.createElement("button");
+realistaButton.innerHTML = "Tamanho Real";
+realistaButton.style.position = "absolute";
+realistaButton.style.bottom = "20px"; 
+realistaButton.style.left = "130px";
+realistaButton.style.background = "rgba(0, 0, 0, 0.8)";
+realistaButton.style.color = "white";
+realistaButton.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+realistaButton.style.borderRadius = "5px";
+realistaButton.style.padding = "10px 15px";
+realistaButton.style.fontSize = "14px";
+realistaButton.style.cursor = "pointer";
+realistaButton.style.zIndex = "1000";
+document.body.appendChild(realistaButton);
+
+realistaButton.addEventListener("click", alternarTamanhoRealista);
+
+function alternarTamanhoRealista() {
+    modoRealista = !modoRealista;
+    
+    const planetas = {
+        'Sol': sol,
+        'Mercúrio': mercurio,
+        'Vênus': venus,
+        'Terra': terra,
+        'Lua': lua,
+        'Marte': marte,
+        'Júpiter': jupter,
+        'Saturno': saturno,
+        'Urano': urano,
+        'Netuno': netuno
+    };
+    
+    for (const [nome, planeta] of Object.entries(planetas)) {
+        if (modoRealista) {
+            planeta.r = RAIO_REALISTA[nome] * UA_TO_PIXELS;
+        } else {
+            planeta.r = RAIO_VISUAL[nome];
+        }
+    }
+    
+    realistaButton.innerHTML = modoRealista ? "Modo Visual" : "Tamanho Real";
+    
+    console.log(`Modo ${modoRealista ? 'REALISTA' : 'VISUAL'} ativado (zoom: ${scale}x)`);
+}
+RAIO_VISUAL['Sol'] = sol.r;
+RAIO_VISUAL['Mercúrio'] = mercurio.r;
+RAIO_VISUAL['Vênus'] = venus.r;
+RAIO_VISUAL['Terra'] = terra.r;
+RAIO_VISUAL['Lua'] = lua.r;
+RAIO_VISUAL['Marte'] = marte.r;
+RAIO_VISUAL['Júpiter'] = jupter.r;
+RAIO_VISUAL['Saturno'] = saturno.r;
+RAIO_VISUAL['Urano'] = urano.r;
+RAIO_VISUAL['Netuno'] = netuno.r;
+
 
 // ==== LOOP PRINCIPAL ====
 function loop() {

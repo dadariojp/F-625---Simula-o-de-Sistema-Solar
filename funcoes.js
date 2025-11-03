@@ -296,7 +296,7 @@ export class Ball{
         }
         ctx.setLineDash([5,5]);
         ctx.strokeStyle = "white";
-        ctx.lineWidth = Math.max(0.5, 2 / scale);
+        ctx.lineWidth = Math.max(0, 2 / scale);
         ctx.stroke();
         ctx.setLineDash([]);
 
