@@ -1,4 +1,4 @@
-import { BALLZ, Ball, Vector, energiaMecanica, calcularExcentricidade,  convertVelocityUAYearToPixelsSec,
+import { BALLZ, Ball, Vector, energiaMecanica,  convertVelocityUAYearToPixelsSec,
     acceleration,accrk2mid, attaRK4, Camera, applyCameraTransform,
     atualizarPainelPlaneta, medirPeriodo
 
@@ -187,7 +187,6 @@ document.getElementById("seletorPlanetas").addEventListener("change", function()
 // ===== Funcoes de Controle 
 function atualizarPainel() {
     const energiamecanica = energiaMecanica(BALLZ, G);
-    const eterra = calcularExcentricidade(terra, sol, G);
     
     // Apenas atualiza os valores, não recria o HTML
     document.getElementById("info-energia").textContent = energiamecanica.toExponential(3);

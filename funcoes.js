@@ -178,6 +178,8 @@ export class Ball{
         this.image = new Image();
         this.imagemCarregada = false;
         this.usarImagem = false;
+        this.orbitaCompletada = false;
+        this.excentricidadeTrail = null;
     }
     carregarImagem(caminho) {
         this.image.src = caminho;
@@ -251,34 +253,61 @@ export class Ball{
             ctx.closePath();
         }
     }
-    desenharRastro(UAtoPX) {
+    calcularExcentricidade() {
+    if (!this.trail || this.trail.length < 2) return; // sem pontos suficientes
+
+    // posição fixa do Sol
+    const solX = 2;
+    const solY = 1;
+
+    let rMin = Infinity;
+    let rMax = -Infinity;
+
+    for (const p of this.trail) {
+        const dx = p.x - solX;
+        const dy = p.y - solY;
+        const r = Math.hypot(dx, dy); // distância ao Sol
+
+        if (r < rMin) rMin = r;
+        if (r > rMax) rMax = r;
+    }
+
+    const a = (rMax + rMin) / 2;
+    const e = (rMax - rMin) / (rMax + rMin);
+
+    this.excentricidade = e;
+    this.semiEixoMaior = a;
+
+    console.log(`${this.name} - Excentricidade via trail: ${e.toFixed(3)}`);
+    console.log(`${this.name} - trail.length: ${this.trail.length}`);
+    console.log(`${this.name} - rMin: ${rMin}, rMax: ${rMax}`);
+}
+    desenharRastro(UAtoPX, sol) {
     if (this.period === null) {
-        // Ainda não completou uma órbita, continua acumulando
         this.trail.push({x: this.pos.x, y: this.pos.y});
-    } else {
-        // Já completou uma órbita, mantém apenas pontos equivalentes a 1 período
-        const pontosPorPeriodo = Math.min(this.trail.length, 8000);
-        this.trail = this.trail.slice(-pontosPorPeriodo);
     }
     
     if (this.trail.length > 1) {
+        // desenha o rastro como antes
         ctx.beginPath();
         ctx.moveTo(this.trail[0].x * UAtoPX, this.trail[0].y * UAtoPX);
         for (let i = 1; i < this.trail.length; i++) {
             ctx.lineTo(this.trail[i].x * UAtoPX, this.trail[i].y * UAtoPX);
         }
-        ctx.setLineDash([5, 5]);
+        ctx.setLineDash([5,5]);
         ctx.strokeStyle = "white";
-        
-        //width proporcional ao zoom (scale)
-        ctx.lineWidth = Math.max(0.5, 2 / scale); // Mínimo de 0.5, máximo relativo ao zoom
-        
+        ctx.lineWidth = Math.max(0.5, 2 / scale);
         ctx.stroke();
         ctx.setLineDash([]);
+
+        // calcula excentricidade só uma vez quando a órbita completa
+        if (this.period !== null && !this.orbitaCompletada) {
+            this.orbitaCompletada = true;
+            this.calcularExcentricidade(sol);
+        }
     }
 }
 };
-
 
 
 
@@ -349,34 +378,6 @@ export function convertVelocityUAYearToPixelsSec(velocityUAYear, UA_TO_PIXELS) {
     
     return velocityPixelsSec;
 }
-
-
-
-
-export function calcularExcentricidade(planeta, sol, G) {
-    // posição relativa
-    const rx = planeta.pos.x - sol.pos.x;
-    const ry = planeta.pos.y - sol.pos.y;
-    const r = Math.hypot(rx, ry);
-
-    // velocidade relativa
-    const vx = planeta.vel.x - sol.vel.x;
-    const vy = planeta.vel.y - sol.vel.y;
-
-    // h = r × v  (em 2D vira pseudo-escalar)
-    const h = rx * vy - ry * vx;
-
-    const mu = G * (sol.mass + planeta.mass);
-
-    // componente do vetor e
-    const ex = (vy * h) / mu - (rx / r);
-    const ey = (-vx * h) / mu - (ry / r);
-
-    const e = Math.hypot(ex, ey); // módulo da excentricidade
-
-    return e;
-}
-
 
 
 export function attaRK4(dt, balls, G) {
