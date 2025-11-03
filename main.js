@@ -1,6 +1,6 @@
 import { BALLZ, Ball, Vector, energiaMecanica, calcularExcentricidade,  convertVelocityUAYearToPixelsSec,
-    acceleration,accrk2mid, attaRK4, Camera, applyCameraTransform, brilho,
-    setOffset, setScale, getOffset, getScale, atualizarPainelPlaneta, medirPeriodo
+    acceleration,accrk2mid, attaRK4, Camera, applyCameraTransform,
+    atualizarPainelPlaneta, medirPeriodo
 
 } from "./funcoes.js";
 
@@ -196,17 +196,16 @@ function atualizarPainel() {
 
 function resetarCamera() {
     window.planetaSeguido = null;
-    scale = 0.3;
-    offsetX = canvas.width / 2 - sol.pos.x * UA_TO_PIXELS * scale;
-    offsetY = canvas.height / 2 - sol.pos.y * UA_TO_PIXELS * scale;
+    window.planetaSelecionado = null;
+    setScale(0.3);
+    const offsetX = canvas.width / 2 - sol.pos.x * UA_TO_PIXELS * 0.3;
+    const offsetY = canvas.height / 2 - sol.pos.y * UA_TO_PIXELS * 0.3;
+    setOffset(offsetX, offsetY);
     
-    // Resetar seleção visual dos botões
-    document.querySelectorAll('.btn-planeta').forEach(b => {
-        b.style.background = "rgba(50, 50, 50, 0.7)";
-        b.style.borderColor = "rgba(100, 100, 100, 0.5)";
-    });
+    // Resetar seleção visual
+    document.getElementById("seletorPlanetas").value = "";
     
-    console.log("Câmera resetada para o Sol");
+    console.log("Câmera resetada para visão geral");
 }
 
 function focarPlaneta(nomePlaneta) {
@@ -299,8 +298,6 @@ speedSlider.addEventListener("input", function() {
     console.log(`Velocidade: ${speedMultiplier.toFixed(1)}x`);
 });
 // === Fim do Painel Interativo ===
-
-
 
 // ==== LOOP PRINCIPAL ====
 function loop() {

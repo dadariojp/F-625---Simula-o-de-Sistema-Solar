@@ -3,18 +3,19 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// ===== Configuracoes Globais
+// ===== Configuracoes Globais === //
 const zoomFactor = 1.1; 
 window.offsetX = 0;
 window.offsetY = 0;
-export let brilho = 0;
 let scale = 0.3;
 
+// ===== Variaveis de Estado 
+window.planetaSeguido = null;
+window.planetaSelecionado = null;
 
-// ===== Elementos do painel Interativo
+
+// ===== Elementos do painel Interativo === //
 const painelPlaneta = document.createElement("div");
-painelPlaneta.id = "painelPlaneta";
-painelPlaneta.style.display = "none";
 painelPlaneta.id = "painelPlaneta";
 painelPlaneta.style.position = "absolute";
 painelPlaneta.style.top = "20px";
@@ -36,52 +37,16 @@ painelPlaneta.style.visibility = "visible";
 document.body.appendChild(painelPlaneta);
 
 
-const painel = document.createElement("div");
-painel.id = "painelInfo";
-painel.style.position = "absolute";
-painel.style.top = "20px";
-painel.style.right = "20px";
-painel.style.background = "rgba(0, 0, 0, 0.8)";
-painel.style.color = "white";
-painel.style.padding = "10px";
-painel.style.borderRadius = "8px";
-painel.style.display = "none";
-painel.style.fontFamily = "monospace";
-painel.style.fontSize="14px";
-painel.style.width="260px";
-painel.style.boxshadow="0 0 10px rgba(255, 255, 255, 0.3)";
-document.body.appendChild(painel);
-
-
-
-export function setOffset(x, y) {
-    offsetX = x;
-    offsetY = y;
-}
-export function getOffset() {
-    return { offsetX, offsetY };
-}
-export function setScale(newScale) {
-    scale = newScale;
-}
-export function getScale() {
-    return scale;
-}
-
-
 // ===== Controle de Camera com conversão de Unidades Astronomicas (UA) para pixel
 export function Camera(canvas, UA_TO_PIXELS) { 
     let isDragging = false;
     let startX, startY;
-    window.planetaSeguido = null;
-    window.planetaSelecionado = null;
 
     // Configuração inicial
-    scale = 0.3;
+    scale = 0.08;
     offsetX = canvas.width / 2 - 2 * UA_TO_PIXELS * scale;
     offsetY = canvas.height / 2 - 1 * UA_TO_PIXELS * scale;
 
-    // Evento de clique para focar nos planetas
     canvas.addEventListener('click', (e) => {
         if (isDragging) return;
         
@@ -89,11 +54,10 @@ export function Camera(canvas, UA_TO_PIXELS) {
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
         
-        // Converter coordenadas
         const worldX = (mouseX - offsetX) / scale;
         const worldY = (mouseY - offsetY) / scale;
         
-        // Verificar colisão com planetas
+        // Margem de erro pro clique do planeta
         for (const planeta of BALLZ) {
             const px = planeta.pos.x * UA_TO_PIXELS;
             const py = planeta.pos.y * UA_TO_PIXELS;
@@ -573,3 +537,4 @@ export function medirPeriodo(planeta, sol, tempo) {
     // Atualiza o último ângulo
     planeta.lastAngle = ang;
 }
+
