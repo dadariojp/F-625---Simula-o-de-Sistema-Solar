@@ -31,9 +31,8 @@ Simulação educacional do sistema solar desenvolvida em JavaScript, criada como
 
 ## Tecnologias Utilizadas
 
-- **JavaScript ES6+** - Lógica principal da simulação
+- **JavaScript+** - Lógica principal da simulação
 - **HTML5 Canvas** - Renderização gráfica
-- **CSS3** - Estilização da interface
 - **GitHub Pages** - Hospedagem e deploy
 
 ## Estrutura do Projeto
@@ -54,17 +53,61 @@ sistema-solar-2d/
     ├── solpixel.png
     └── luapixel.png
 
-## Instalação e Execução
+# Controles da Simulação
 
-### Pré-requisitos
-- Navegador web moderno com suporte a JavaScript ES6+
-- Servidor web local (recomendado para desenvolvimento)
+## Navegação
+- **Zoom**: Scroll do mouse
+- **Pan**: Arrastar com o botão esquerdo do mouse
+- **Seleção**: Clique em qualquer planeta
 
-### Execução Local
-1. Clone o repositório:
-```bash
-git clone [url-do-repositório]
-```
+## Controles de Simulação
+- **Velocidade**: Slider no canto inferior esquerdo (1x a 100x)
+- **Pausa/Retomar**: Botão no canto inferior esquerdo
+- **Modo Realista**: Alterna entre tamanhos visuais e escalas reais
 
+# Detalhes Técnicos
+
+## Modelo Físico
+- Unidade Astronômica (UA) como base de distância
+- Massas solares como unidade de massa
+- Constante gravitacional: G = 39.48 UA³/(M☉·ano²)
+- Passo de integração temporal: dt = 0.00001 anos
+
+## Algoritmos Implementados
+- Runge-Kutta 4ª ordem para integração das equações diferenciais
+- Cálculo de energia mecânica para verificação da conservação
+- Detecção de período orbital através de acumulação angular
+
+## Parâmetros dos Corpos Celestes
+Os dados astronômicos (massas, densidades, períodos orbitais) foram obtidos do banco de dados da NASA, garantindo precisão científica nos parâmetros da simulação.
+
+# Limitações Conhecidas
+- Modelo restrito a duas dimensões
+- Ausência de correções relativísticas
+- Simplificação de interações gravitacionais múltiplas
+- Limitação computacional para adição de mais corpos celestes
+
+# Desenvolvimento Futuro
+- Implementação de correções pós-newtonianas
+- Expansão para três dimensões
+- Adição de satélites naturais adicionais
+- Otimização de performance para simulações de longo prazo
+- Implementação de sistema de colisões
+
+# Autores
+- Aurélio Miguel Perini Polli
+- João Pedro Dadario Pereira
+- João Vitor de Oliveira Perri
+
+# Licença
+Este projeto é destinado para fins educacionais e de pesquisa.
+
+# Referências
+- NASA Solar System Exploration - Dados planetários
+- Fundamentals of Astrodynamics - Modelos orbitais
+- Numerical Recipes - Algoritmos de integração numérica
+
+---
+**Projeto em desenvolvimento contínuo - Departamento de Física**
 
 
