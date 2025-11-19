@@ -4,11 +4,12 @@
 
 Simulação educacional do sistema solar desenvolvida em JavaScript, criada como ferramenta de auxílio para o ensino de astronomia em instituições de educação básica. O projeto implementa um modelo físico preciso do sistema solar em duas dimensões, permitindo a visualização interativa dos movimentos planetários e estudos de mecânica celeste.
 
-#Experimente a simulação agora mesmo!
+
+## Experimente a simulação agora mesmo!
 
 A versão mais recente deste projeto está disponível no GitHub Pages:
 
-
+https://dadariojp.github.io/Simula-o-2D-do-Sistema-Solar/
 
 
 ## Características Principais
